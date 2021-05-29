@@ -35,3 +35,7 @@ lint: ## run golangci-lint
 	command -v golangci-lint > /dev/null 2>&1 || \
 	  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION)
 	golangci-lint run
+
+.PHONY: generate
+generate: ## run go generate
+	go generate

@@ -30,13 +30,5 @@ jobs:
           restore-keys: ${{ runner.os }}-go-${{ matrix.go-version }}-
       - name: Download go modules
         run: go mod download
-      - name: Run go test
-        run: make coverage
-      - name: Run go vet
-        run: go vet ./...
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-            sh -s -- -b $(go env GOPATH)/bin v1.37.0
-      - name: Run golangci-lint
-        run: golangci-lint run
+      - name: Build
+        run: make build

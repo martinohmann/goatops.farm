@@ -3,10 +3,16 @@
 [![Build Status](https://github.com/martinohmann/goatops.farm/workflows/build/badge.svg)](https://github.com/martinohmann/goatops.farm/actions?query=workflow%3Abuild)
 ![GitHub](https://img.shields.io/github/license/martinohmann/goatops.farm?color=orange)
 
-## Installation
+API for goat facts from [https://github.com/binford2k/goatops](https://github.com/binford2k/goatops).
 
-```
-go install github.com/martinohmann/goatops.farm
+## Running
+
+Generate `goatfacts.json`, build and run.
+
+```bash
+make generate
+make build
+./goatops.farm
 ```
 
 ## License
