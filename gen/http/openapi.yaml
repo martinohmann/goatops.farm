@@ -82,7 +82,7 @@ paths:
     get:
       tags:
       - goatfacts
-      summary: Download ./gen/http/openapi.json
+      summary: Download ./gen/http/openapi3.json
       operationId: goatfacts#/openapi.json
       responses:
         "200":
@@ -92,12 +92,12 @@ paths:
       schemes:
       - http
       - https
-  /openapi.yaml:
+  /swagger.json:
     get:
       tags:
       - goatfacts
-      summary: Download ./gen/http/openapi.yaml
-      operationId: goatfacts#/openapi.yaml
+      summary: Download ./gen/http/openapi.json
+      operationId: goatfacts#/swagger.json
       responses:
         "200":
           description: File downloaded
@@ -153,19 +153,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: get-fact_BadRequest_response_body result type (default view)
     example:
       fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
-      timeout: false
+      temporary: false
+      timeout: true
     required:
     - name
     - id
@@ -180,7 +180,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -202,14 +202,14 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: get-fact_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -263,18 +263,18 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: get-random-fact_NotFound_response_body result type (default view)
     example:
       fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name

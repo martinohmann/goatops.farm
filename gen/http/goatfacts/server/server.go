@@ -18,12 +18,12 @@ import (
 
 // Server lists the goatfacts service endpoint HTTP handlers.
 type Server struct {
-	Mounts             []*MountPoint
-	GetFact            http.Handler
-	ListFacts          http.Handler
-	GetRandomFact      http.Handler
-	GenHTTPOpenapiJSON http.Handler
-	GenHTTPOpenapiYaml http.Handler
+	Mounts              []*MountPoint
+	GetFact             http.Handler
+	ListFacts           http.Handler
+	GetRandomFact       http.Handler
+	GenHTTPOpenapiJSON  http.Handler
+	GenHTTPOpenapi3JSON http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -57,27 +57,27 @@ func New(
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
 	fileSystemGenHTTPOpenapiJSON http.FileSystem,
-	fileSystemGenHTTPOpenapiYaml http.FileSystem,
+	fileSystemGenHTTPOpenapi3JSON http.FileSystem,
 ) *Server {
 	if fileSystemGenHTTPOpenapiJSON == nil {
 		fileSystemGenHTTPOpenapiJSON = http.Dir(".")
 	}
-	if fileSystemGenHTTPOpenapiYaml == nil {
-		fileSystemGenHTTPOpenapiYaml = http.Dir(".")
+	if fileSystemGenHTTPOpenapi3JSON == nil {
+		fileSystemGenHTTPOpenapi3JSON = http.Dir(".")
 	}
 	return &Server{
 		Mounts: []*MountPoint{
 			{"GetFact", "GET", "/facts/{id}"},
 			{"ListFacts", "GET", "/facts"},
 			{"GetRandomFact", "GET", "/facts/random"},
-			{"./gen/http/openapi.json", "GET", "/openapi.json"},
-			{"./gen/http/openapi.yaml", "GET", "/openapi.yaml"},
+			{"./gen/http/openapi.json", "GET", "/swagger.json"},
+			{"./gen/http/openapi3.json", "GET", "/openapi.json"},
 		},
-		GetFact:            NewGetFactHandler(e.GetFact, mux, decoder, encoder, errhandler, formatter),
-		ListFacts:          NewListFactsHandler(e.ListFacts, mux, decoder, encoder, errhandler, formatter),
-		GetRandomFact:      NewGetRandomFactHandler(e.GetRandomFact, mux, decoder, encoder, errhandler, formatter),
-		GenHTTPOpenapiJSON: http.FileServer(fileSystemGenHTTPOpenapiJSON),
-		GenHTTPOpenapiYaml: http.FileServer(fileSystemGenHTTPOpenapiYaml),
+		GetFact:             NewGetFactHandler(e.GetFact, mux, decoder, encoder, errhandler, formatter),
+		ListFacts:           NewListFactsHandler(e.ListFacts, mux, decoder, encoder, errhandler, formatter),
+		GetRandomFact:       NewGetRandomFactHandler(e.GetRandomFact, mux, decoder, encoder, errhandler, formatter),
+		GenHTTPOpenapiJSON:  http.FileServer(fileSystemGenHTTPOpenapiJSON),
+		GenHTTPOpenapi3JSON: http.FileServer(fileSystemGenHTTPOpenapi3JSON),
 	}
 }
 
@@ -96,8 +96,8 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountGetFactHandler(mux, h.GetFact)
 	MountListFactsHandler(mux, h.ListFacts)
 	MountGetRandomFactHandler(mux, h.GetRandomFact)
-	MountGenHTTPOpenapiJSON(mux, goahttp.ReplacePrefix("/openapi.json", "/./gen/http/openapi.json", h.GenHTTPOpenapiJSON))
-	MountGenHTTPOpenapiYaml(mux, goahttp.ReplacePrefix("/openapi.yaml", "/./gen/http/openapi.yaml", h.GenHTTPOpenapiYaml))
+	MountGenHTTPOpenapiJSON(mux, goahttp.ReplacePrefix("/swagger.json", "/./gen/http/openapi.json", h.GenHTTPOpenapiJSON))
+	MountGenHTTPOpenapi3JSON(mux, goahttp.ReplacePrefix("/openapi.json", "/./gen/http/openapi3.json", h.GenHTTPOpenapi3JSON))
 }
 
 // MountGetFactHandler configures the mux to serve the "goatfacts" service
@@ -240,13 +240,13 @@ func NewGetRandomFactHandler(
 }
 
 // MountGenHTTPOpenapiJSON configures the mux to serve GET request made to
-// "/openapi.json".
+// "/swagger.json".
 func MountGenHTTPOpenapiJSON(mux goahttp.Muxer, h http.Handler) {
-	mux.Handle("GET", "/openapi.json", h.ServeHTTP)
+	mux.Handle("GET", "/swagger.json", h.ServeHTTP)
 }
 
-// MountGenHTTPOpenapiYaml configures the mux to serve GET request made to
-// "/openapi.yaml".
-func MountGenHTTPOpenapiYaml(mux goahttp.Muxer, h http.Handler) {
-	mux.Handle("GET", "/openapi.yaml", h.ServeHTTP)
+// MountGenHTTPOpenapi3JSON configures the mux to serve GET request made to
+// "/openapi.json".
+func MountGenHTTPOpenapi3JSON(mux goahttp.Muxer, h http.Handler) {
+	mux.Handle("GET", "/openapi.json", h.ServeHTTP)
 }

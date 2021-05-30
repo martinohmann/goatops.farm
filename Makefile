@@ -39,3 +39,4 @@ lint: ## run golangci-lint
 .PHONY: generate
 generate: ## run go generate
 	go generate
+	goa gen $(PKG_BASE)/design

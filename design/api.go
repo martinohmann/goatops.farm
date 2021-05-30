@@ -2,10 +2,10 @@ package design
 
 import . "goa.design/goa/v3/dsl"
 
-var _ = API("goatfacts", func() {
+var _ = API("goatopsfarm", func() {
 	Title("Goat facts Service")
 	Description("Service for obtaining your daily dose of goat facts")
-	Server("goatfacts", func() {
+	Server("goatopsfarm", func() {
 		Host("localhost", func() {
 			URI("http://localhost:8080")
 		})
@@ -59,8 +59,8 @@ var _ = Service("goatfacts", func() {
 		})
 	})
 
-	Files("/openapi.json", "./gen/http/openapi.json")
-	Files("/openapi.yaml", "./gen/http/openapi.yaml")
+	Files("/swagger.json", "./gen/http/openapi.json")
+	Files("/openapi.json", "./gen/http/openapi3.json")
 })
 
 var Fact = Type("Fact", func() {
