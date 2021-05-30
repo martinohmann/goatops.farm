@@ -11,7 +11,7 @@ help:
 
 .PHONY: build
 build: ## build goatops.farm
-	go build -ldflags "-s -w" -o goatops.farm main.go 
+	go build -ldflags "-s -w" -o goatops.farm
 
 .PHONY: install
 install: build ## install goatops.farm

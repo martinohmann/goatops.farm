@@ -19,6 +19,5 @@ FROM scratch
 WORKDIR /app
 
 COPY --from=builder /src/goatops.farm /app/goatops.farm
-COPY --from=builder /src/goatfacts.json /app/goatfacts.json
 
 CMD ["/app/goatops.farm"] 

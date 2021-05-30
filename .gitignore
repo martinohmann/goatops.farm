@@ -1,5 +1,4 @@
 coverage.txt
-goatfacts.json
 vendor/
 /dist
 /goatops.farm
