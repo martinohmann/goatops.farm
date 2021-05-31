@@ -9,12 +9,12 @@ package server
 
 // ListFactsGoatfactsPath returns the URL path to the goatfacts service ListFacts HTTP endpoint.
 func ListFactsGoatfactsPath() string {
-	return "/api/facts"
+	return "/api/v1/facts"
 }
 
 // RandomFactsGoatfactsPath returns the URL path to the goatfacts service RandomFacts HTTP endpoint.
 func RandomFactsGoatfactsPath() string {
-	return "/api/facts/random"
+	return "/api/v1/facts/random"
 }
 
 // IndexGoatfactsPath returns the URL path to the goatfacts service Index HTTP endpoint.

@@ -14,6 +14,7 @@ import (
 	goatfacts "github.com/martinohmann/goatops.farm/gen/goatfacts"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/plugins/v3/cors"
 )
 
 // Server lists the goatfacts service endpoint HTTP handlers.
@@ -22,8 +23,9 @@ type Server struct {
 	ListFacts           http.Handler
 	RandomFacts         http.Handler
 	Index               http.Handler
+	CORS                http.Handler
 	GenHTTPOpenapi3JSON http.Handler
-	Static              http.Handler
+	StaticSwagger       http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -57,27 +59,33 @@ func New(
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
 	fileSystemGenHTTPOpenapi3JSON http.FileSystem,
-	fileSystemStatic http.FileSystem,
+	fileSystemStaticSwagger http.FileSystem,
 ) *Server {
 	if fileSystemGenHTTPOpenapi3JSON == nil {
 		fileSystemGenHTTPOpenapi3JSON = http.Dir(".")
 	}
-	if fileSystemStatic == nil {
-		fileSystemStatic = http.Dir(".")
+	if fileSystemStaticSwagger == nil {
+		fileSystemStaticSwagger = http.Dir(".")
 	}
 	return &Server{
 		Mounts: []*MountPoint{
-			{"ListFacts", "GET", "/api/facts"},
-			{"RandomFacts", "GET", "/api/facts/random"},
+			{"ListFacts", "GET", "/api/v1/facts"},
+			{"RandomFacts", "GET", "/api/v1/facts/random"},
 			{"Index", "GET", "/"},
+			{"CORS", "OPTIONS", "/api/v1/facts"},
+			{"CORS", "OPTIONS", "/api/v1/facts/random"},
+			{"CORS", "OPTIONS", "/"},
+			{"CORS", "OPTIONS", "/api/openapi.json"},
+			{"CORS", "OPTIONS", "/api/swagger/{*path}"},
 			{"./gen/http/openapi3.json", "GET", "/api/openapi.json"},
-			{"./static", "GET", "/static"},
+			{"./static/swagger", "GET", "/api/swagger"},
 		},
 		ListFacts:           NewListFactsHandler(e.ListFacts, mux, decoder, encoder, errhandler, formatter),
 		RandomFacts:         NewRandomFactsHandler(e.RandomFacts, mux, decoder, encoder, errhandler, formatter),
 		Index:               NewIndexHandler(e.Index, mux, decoder, encoder, errhandler, formatter),
+		CORS:                NewCORSHandler(),
 		GenHTTPOpenapi3JSON: http.FileServer(fileSystemGenHTTPOpenapi3JSON),
-		Static:              http.FileServer(fileSystemStatic),
+		StaticSwagger:       http.FileServer(fileSystemStaticSwagger),
 	}
 }
 
@@ -89,6 +97,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.ListFacts = m(s.ListFacts)
 	s.RandomFacts = m(s.RandomFacts)
 	s.Index = m(s.Index)
+	s.CORS = m(s.CORS)
 }
 
 // Mount configures the mux to serve the goatfacts endpoints.
@@ -96,20 +105,21 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountListFactsHandler(mux, h.ListFacts)
 	MountRandomFactsHandler(mux, h.RandomFacts)
 	MountIndexHandler(mux, h.Index)
+	MountCORSHandler(mux, h.CORS)
 	MountGenHTTPOpenapi3JSON(mux, goahttp.ReplacePrefix("/api/openapi.json", "/./gen/http/openapi3.json", h.GenHTTPOpenapi3JSON))
-	MountStatic(mux, goahttp.ReplacePrefix("/static", "/./static", h.Static))
+	MountStaticSwagger(mux, goahttp.ReplacePrefix("/api/swagger", "/./static/swagger", h.StaticSwagger))
 }
 
 // MountListFactsHandler configures the mux to serve the "goatfacts" service
 // "ListFacts" endpoint.
 func MountListFactsHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := h.(http.HandlerFunc)
+	f, ok := HandleGoatfactsOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/api/facts", f)
+	mux.Handle("GET", "/api/v1/facts", f)
 }
 
 // NewListFactsHandler creates a HTTP handler which loads the HTTP request and
@@ -147,13 +157,13 @@ func NewListFactsHandler(
 // MountRandomFactsHandler configures the mux to serve the "goatfacts" service
 // "RandomFacts" endpoint.
 func MountRandomFactsHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := h.(http.HandlerFunc)
+	f, ok := HandleGoatfactsOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/api/facts/random", f)
+	mux.Handle("GET", "/api/v1/facts/random", f)
 }
 
 // NewRandomFactsHandler creates a HTTP handler which loads the HTTP request
@@ -198,7 +208,7 @@ func NewRandomFactsHandler(
 // MountIndexHandler configures the mux to serve the "goatfacts" service
 // "Index" endpoint.
 func MountIndexHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := h.(http.HandlerFunc)
+	f, ok := HandleGoatfactsOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -242,11 +252,61 @@ func NewIndexHandler(
 // MountGenHTTPOpenapi3JSON configures the mux to serve GET request made to
 // "/api/openapi.json".
 func MountGenHTTPOpenapi3JSON(mux goahttp.Muxer, h http.Handler) {
-	mux.Handle("GET", "/api/openapi.json", h.ServeHTTP)
+	mux.Handle("GET", "/api/openapi.json", HandleGoatfactsOrigin(h).ServeHTTP)
 }
 
-// MountStatic configures the mux to serve GET request made to "/static".
-func MountStatic(mux goahttp.Muxer, h http.Handler) {
-	mux.Handle("GET", "/static/", h.ServeHTTP)
-	mux.Handle("GET", "/static/*path", h.ServeHTTP)
+// MountStaticSwagger configures the mux to serve GET request made to
+// "/api/swagger".
+func MountStaticSwagger(mux goahttp.Muxer, h http.Handler) {
+	mux.Handle("GET", "/api/swagger/", HandleGoatfactsOrigin(h).ServeHTTP)
+	mux.Handle("GET", "/api/swagger/*path", HandleGoatfactsOrigin(h).ServeHTTP)
+}
+
+// MountCORSHandler configures the mux to serve the CORS endpoints for the
+// service goatfacts.
+func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
+	h = HandleGoatfactsOrigin(h)
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("OPTIONS", "/api/v1/facts", f)
+	mux.Handle("OPTIONS", "/api/v1/facts/random", f)
+	mux.Handle("OPTIONS", "/", f)
+	mux.Handle("OPTIONS", "/api/openapi.json", f)
+	mux.Handle("OPTIONS", "/api/swagger/{*path}", f)
+}
+
+// NewCORSHandler creates a HTTP handler which returns a simple 200 response.
+func NewCORSHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+	})
+}
+
+// HandleGoatfactsOrigin applies the CORS response headers corresponding to the
+// origin for the service goatfacts.
+func HandleGoatfactsOrigin(h http.Handler) http.Handler {
+	origHndlr := h.(http.HandlerFunc)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			// Not a CORS request
+			origHndlr(w, r)
+			return
+		}
+		if cors.MatchOrigin(origin, "*") {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+			if acrm := r.Header.Get("Access-Control-Request-Method"); acrm != "" {
+				// We are handling a preflight request
+			}
+			origHndlr(w, r)
+			return
+		}
+		origHndlr(w, r)
+		return
+	})
 }

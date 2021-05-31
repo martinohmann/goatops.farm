@@ -29,7 +29,45 @@ paths:
             format: byte
       schemes:
       - http
-  /api/facts:
+  /api/openapi.json:
+    get:
+      tags:
+      - goatfacts
+      summary: Download ./gen/http/openapi3.json
+      operationId: goatfacts#/api/openapi.json
+      responses:
+        "200":
+          description: File downloaded
+          schema:
+            type: file
+      schemes:
+      - http
+      - https
+  /api/swagger/{path}:
+    get:
+      tags:
+      - goatfacts
+      summary: Download ./static/swagger
+      operationId: goatfacts#/api/swagger/{*path}
+      parameters:
+      - name: path
+        in: path
+        description: Relative file path
+        required: true
+        type: string
+      responses:
+        "200":
+          description: File downloaded
+          schema:
+            type: file
+        "404":
+          description: File not found
+          schema:
+            $ref: '#/definitions/Error'
+      schemes:
+      - http
+      - https
+  /api/v1/facts:
     get:
       tags:
       - goatfacts
@@ -45,7 +83,7 @@ paths:
               example: Quos dolor.
       schemes:
       - http
-  /api/facts/random:
+  /api/v1/facts/random:
     get:
       tags:
       - goatfacts
@@ -71,44 +109,6 @@ paths:
             $ref: '#/definitions/GoatfactsRandomFactsBadRequestResponseBody'
       schemes:
       - http
-  /api/openapi.json:
-    get:
-      tags:
-      - goatfacts
-      summary: Download ./gen/http/openapi3.json
-      operationId: goatfacts#/api/openapi.json
-      responses:
-        "200":
-          description: File downloaded
-          schema:
-            type: file
-      schemes:
-      - http
-      - https
-  /static/{path}:
-    get:
-      tags:
-      - goatfacts
-      summary: Download ./static
-      operationId: goatfacts#/static/{*path}
-      parameters:
-      - name: path
-        in: path
-        description: Relative file path
-        required: true
-        type: string
-      responses:
-        "200":
-          description: File downloaded
-          schema:
-            type: file
-        "404":
-          description: File not found
-          schema:
-            $ref: '#/definitions/Error'
-      schemes:
-      - http
-      - https
 definitions:
   Error:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'

@@ -108,12 +108,14 @@ func (s *goatFactsSvc) randomFacts(n int) ([]string, error) {
 }
 
 var indexTemplate = `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>goatops.farm</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/mini.css@3.0.1/dist/mini-default.min.css" />
 </head>
 <body>
-  <h1>Something you should know about goats</h1>
+  <h2>Quit your job and become a goat farmer</h2>
 {{ with .Facts }}
   <ol>
 {{ range $fact := . }}
@@ -121,11 +123,11 @@ var indexTemplate = `<!DOCTYPE html>
 {{ end }}
   </ol>
 {{ end }}
-
-  <h2>JSON API</h2>
+  <h3>API</h3>
   <p>
-    See <a href="/static/swagger">swagger-ui</a> for API endpoint docs.
+    See <a href="/api/swagger">swagger-ui</a> for API endpoint docs.
   </p>
+  <h3>More</h3>
   <p>
     Source code on <a href="https://github.com/martinohmann/goatops.farm">GitHub</a>.
   </p>

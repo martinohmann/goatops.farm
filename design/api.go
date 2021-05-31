@@ -28,7 +28,7 @@ var _ = Service("goatfacts", func() {
 		Result(ArrayOf(String))
 
 		HTTP(func() {
-			GET("/api/facts")
+			GET("/api/v1/facts")
 			Response(StatusOK)
 		})
 	})
@@ -43,7 +43,7 @@ var _ = Service("goatfacts", func() {
 		Error("BadRequest")
 
 		HTTP(func() {
-			GET("/api/facts/random")
+			GET("/api/v1/facts/random")
 			Params(func() {
 				Param("n")
 			})
@@ -64,5 +64,5 @@ var _ = Service("goatfacts", func() {
 	})
 
 	Files("/api/openapi.json", "./gen/http/openapi3.json")
-	Files("/static/{*path}", "./static")
+	Files("/api/swagger/{*path}", "./static/swagger")
 })

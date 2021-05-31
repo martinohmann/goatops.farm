@@ -78,7 +78,32 @@ paths:
               - 117
               - 115
               - 46
-  /api/facts:
+  /api/openapi.json:
+    get:
+      tags:
+      - goatfacts
+      summary: Download ./gen/http/openapi3.json
+      operationId: goatfacts#/api/openapi.json
+      responses:
+        "200":
+          description: File downloaded
+  /api/swagger/{*path}:
+    get:
+      tags:
+      - goatfacts
+      summary: Download ./static/swagger
+      operationId: goatfacts#/api/swagger/{*path}
+      parameters:
+      - name: path
+        in: path
+        description: Relative file path
+        required: true
+      responses:
+        "200":
+          description: File not found
+        "404":
+          description: File not found
+  /api/v1/facts:
     get:
       tags:
       - goatfacts
@@ -101,7 +126,7 @@ paths:
               example:
               - Dolor dolore esse temporibus error rerum.
               - Blanditiis ex alias.
-  /api/facts/random:
+  /api/v1/facts/random:
     get:
       tags:
       - goatfacts
@@ -146,31 +171,6 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
-  /api/openapi.json:
-    get:
-      tags:
-      - goatfacts
-      summary: Download ./gen/http/openapi3.json
-      operationId: goatfacts#/api/openapi.json
-      responses:
-        "200":
-          description: File downloaded
-  /static/{*path}:
-    get:
-      tags:
-      - goatfacts
-      summary: Download ./static
-      operationId: goatfacts#/static/{*path}
-      parameters:
-      - name: path
-        in: path
-        description: Relative file path
-        required: true
-      responses:
-        "200":
-          description: File not found
-        "404":
-          description: File not found
 components:
   schemas:
     Error:
