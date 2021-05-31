@@ -10,119 +10,22 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
 	goatfacts "github.com/martinohmann/goatops.farm/gen/goatfacts"
 	goahttp "goa.design/goa/v3/http"
-	goa "goa.design/goa/v3/pkg"
 )
 
-// BuildGetFactRequest instantiates a HTTP request object with method and path
-// set to call the "goatfacts" service "get-fact" endpoint
-func (c *Client) BuildGetFactRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	var (
-		id string
-	)
-	{
-		p, ok := v.(*goatfacts.GetFactPayload)
-		if !ok {
-			return nil, goahttp.ErrInvalidType("goatfacts", "get-fact", "*goatfacts.GetFactPayload", v)
-		}
-		id = p.ID
-	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetFactGoatfactsPath(id)}
-	req, err := http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return nil, goahttp.ErrInvalidURL("goatfacts", "get-fact", u.String(), err)
-	}
-	if ctx != nil {
-		req = req.WithContext(ctx)
-	}
-
-	return req, nil
-}
-
-// DecodeGetFactResponse returns a decoder for responses returned by the
-// goatfacts get-fact endpoint. restoreBody controls whether the response body
-// should be restored after having been read.
-// DecodeGetFactResponse may return the following errors:
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
-//	- error: internal error
-func DecodeGetFactResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
-	return func(resp *http.Response) (interface{}, error) {
-		if restoreBody {
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
-			}
-			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			defer func() {
-				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			}()
-		} else {
-			defer resp.Body.Close()
-		}
-		switch resp.StatusCode {
-		case http.StatusOK:
-			var (
-				body GetFactResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("goatfacts", "get-fact", err)
-			}
-			err = ValidateGetFactResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("goatfacts", "get-fact", err)
-			}
-			res := NewGetFactFactOK(&body)
-			return res, nil
-		case http.StatusNotFound:
-			var (
-				body GetFactNotFoundResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("goatfacts", "get-fact", err)
-			}
-			err = ValidateGetFactNotFoundResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("goatfacts", "get-fact", err)
-			}
-			return nil, NewGetFactNotFound(&body)
-		case http.StatusBadRequest:
-			var (
-				body GetFactBadRequestResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("goatfacts", "get-fact", err)
-			}
-			err = ValidateGetFactBadRequestResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("goatfacts", "get-fact", err)
-			}
-			return nil, NewGetFactBadRequest(&body)
-		default:
-			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("goatfacts", "get-fact", resp.StatusCode, string(body))
-		}
-	}
-}
-
 // BuildListFactsRequest instantiates a HTTP request object with method and
-// path set to call the "goatfacts" service "list-facts" endpoint
+// path set to call the "goatfacts" service "ListFacts" endpoint
 func (c *Client) BuildListFactsRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ListFactsGoatfactsPath()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("goatfacts", "list-facts", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("goatfacts", "ListFacts", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -132,8 +35,8 @@ func (c *Client) BuildListFactsRequest(ctx context.Context, v interface{}) (*htt
 }
 
 // DecodeListFactsResponse returns a decoder for responses returned by the
-// goatfacts list-facts endpoint. restoreBody controls whether the response
-// body should be restored after having been read.
+// goatfacts ListFacts endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
 func DecodeListFactsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -151,39 +54,28 @@ func DecodeListFactsResponse(decoder func(*http.Response) goahttp.Decoder, resto
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body ListFactsResponseBody
+				body []string
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("goatfacts", "list-facts", err)
+				return nil, goahttp.ErrDecodingError("goatfacts", "ListFacts", err)
 			}
-			for _, e := range body {
-				if e != nil {
-					if err2 := ValidateFact(e); err2 != nil {
-						err = goa.MergeErrors(err, err2)
-					}
-				}
-			}
-			if err != nil {
-				return nil, goahttp.ErrValidationError("goatfacts", "list-facts", err)
-			}
-			res := NewListFactsFactOK(body)
-			return res, nil
+			return body, nil
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("goatfacts", "list-facts", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("goatfacts", "ListFacts", resp.StatusCode, string(body))
 		}
 	}
 }
 
-// BuildGetRandomFactRequest instantiates a HTTP request object with method and
-// path set to call the "goatfacts" service "get-random-fact" endpoint
-func (c *Client) BuildGetRandomFactRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetRandomFactGoatfactsPath()}
+// BuildRandomFactsRequest instantiates a HTTP request object with method and
+// path set to call the "goatfacts" service "RandomFacts" endpoint
+func (c *Client) BuildRandomFactsRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RandomFactsGoatfactsPath()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("goatfacts", "get-random-fact", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("goatfacts", "RandomFacts", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -192,13 +84,30 @@ func (c *Client) BuildGetRandomFactRequest(ctx context.Context, v interface{}) (
 	return req, nil
 }
 
-// DecodeGetRandomFactResponse returns a decoder for responses returned by the
-// goatfacts get-random-fact endpoint. restoreBody controls whether the
-// response body should be restored after having been read.
-// DecodeGetRandomFactResponse may return the following errors:
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+// EncodeRandomFactsRequest returns an encoder for requests sent to the
+// goatfacts RandomFacts server.
+func EncodeRandomFactsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*goatfacts.RandomFactsPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("goatfacts", "RandomFacts", "*goatfacts.RandomFactsPayload", v)
+		}
+		values := req.URL.Query()
+		if p.N != nil {
+			values.Add("n", fmt.Sprintf("%v", *p.N))
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeRandomFactsResponse returns a decoder for responses returned by the
+// goatfacts RandomFacts endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeRandomFactsResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
 //	- error: internal error
-func DecodeGetRandomFactResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeRandomFactsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -215,47 +124,81 @@ func DecodeGetRandomFactResponse(decoder func(*http.Response) goahttp.Decoder, r
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body GetRandomFactResponseBody
+				body []string
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("goatfacts", "get-random-fact", err)
+				return nil, goahttp.ErrDecodingError("goatfacts", "RandomFacts", err)
 			}
-			err = ValidateGetRandomFactResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("goatfacts", "get-random-fact", err)
-			}
-			res := NewGetRandomFactFactOK(&body)
-			return res, nil
-		case http.StatusNotFound:
+			return body, nil
+		case http.StatusBadRequest:
 			var (
-				body GetRandomFactNotFoundResponseBody
+				body RandomFactsBadRequestResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("goatfacts", "get-random-fact", err)
+				return nil, goahttp.ErrDecodingError("goatfacts", "RandomFacts", err)
 			}
-			err = ValidateGetRandomFactNotFoundResponseBody(&body)
+			err = ValidateRandomFactsBadRequestResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("goatfacts", "get-random-fact", err)
+				return nil, goahttp.ErrValidationError("goatfacts", "RandomFacts", err)
 			}
-			return nil, NewGetRandomFactNotFound(&body)
+			return nil, NewRandomFactsBadRequest(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("goatfacts", "get-random-fact", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("goatfacts", "RandomFacts", resp.StatusCode, string(body))
 		}
 	}
 }
 
-// unmarshalFactToGoatfactsFact builds a value of type *goatfacts.Fact from a
-// value of type *Fact.
-func unmarshalFactToGoatfactsFact(v *Fact) *goatfacts.Fact {
-	res := &goatfacts.Fact{
-		ID:   *v.ID,
-		Text: *v.Text,
+// BuildIndexRequest instantiates a HTTP request object with method and path
+// set to call the "goatfacts" service "Index" endpoint
+func (c *Client) BuildIndexRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: IndexGoatfactsPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("goatfacts", "Index", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
 	}
 
-	return res
+	return req, nil
+}
+
+// DecodeIndexResponse returns a decoder for responses returned by the
+// goatfacts Index endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+func DecodeIndexResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body []byte
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("goatfacts", "Index", err)
+			}
+			return body, nil
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("goatfacts", "Index", resp.StatusCode, string(body))
+		}
+	}
 }

@@ -19,7 +19,6 @@ import (
 // handleHTTPServer starts configures and starts a HTTP server on the given
 // URL. It shuts down the server if any error is received in the error channel.
 func handleHTTPServer(ctx context.Context, u *url.URL, goatfactsEndpoints *goatfacts.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
-
 	// Setup goa log adapter.
 	var (
 		adapter middleware.Logger
@@ -53,7 +52,7 @@ func handleHTTPServer(ctx context.Context, u *url.URL, goatfactsEndpoints *goatf
 	)
 	{
 		eh := errorHandler(logger)
-		goatfactsServer = goatfactssvr.New(goatfactsEndpoints, mux, dec, enc, eh, nil, nil, nil)
+		goatfactsServer = goatfactssvr.New(goatfactsEndpoints, mux, dec, enc, eh, nil, nil)
 		if debug {
 			servers := goahttp.Servers{
 				goatfactsServer,

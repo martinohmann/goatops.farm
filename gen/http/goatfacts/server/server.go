@@ -19,10 +19,9 @@ import (
 // Server lists the goatfacts service endpoint HTTP handlers.
 type Server struct {
 	Mounts              []*MountPoint
-	GetFact             http.Handler
 	ListFacts           http.Handler
-	GetRandomFact       http.Handler
-	GenHTTPOpenapiJSON  http.Handler
+	RandomFacts         http.Handler
+	Index               http.Handler
 	GenHTTPOpenapi3JSON http.Handler
 }
 
@@ -56,27 +55,21 @@ func New(
 	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
-	fileSystemGenHTTPOpenapiJSON http.FileSystem,
 	fileSystemGenHTTPOpenapi3JSON http.FileSystem,
 ) *Server {
-	if fileSystemGenHTTPOpenapiJSON == nil {
-		fileSystemGenHTTPOpenapiJSON = http.Dir(".")
-	}
 	if fileSystemGenHTTPOpenapi3JSON == nil {
 		fileSystemGenHTTPOpenapi3JSON = http.Dir(".")
 	}
 	return &Server{
 		Mounts: []*MountPoint{
-			{"GetFact", "GET", "/facts/{id}"},
-			{"ListFacts", "GET", "/facts"},
-			{"GetRandomFact", "GET", "/facts/random"},
-			{"./gen/http/openapi.json", "GET", "/swagger.json"},
-			{"./gen/http/openapi3.json", "GET", "/openapi.json"},
+			{"ListFacts", "GET", "/api/facts"},
+			{"RandomFacts", "GET", "/api/facts/random"},
+			{"Index", "GET", "/"},
+			{"./gen/http/openapi3.json", "GET", "/api/openapi.json"},
 		},
-		GetFact:             NewGetFactHandler(e.GetFact, mux, decoder, encoder, errhandler, formatter),
 		ListFacts:           NewListFactsHandler(e.ListFacts, mux, decoder, encoder, errhandler, formatter),
-		GetRandomFact:       NewGetRandomFactHandler(e.GetRandomFact, mux, decoder, encoder, errhandler, formatter),
-		GenHTTPOpenapiJSON:  http.FileServer(fileSystemGenHTTPOpenapiJSON),
+		RandomFacts:         NewRandomFactsHandler(e.RandomFacts, mux, decoder, encoder, errhandler, formatter),
+		Index:               NewIndexHandler(e.Index, mux, decoder, encoder, errhandler, formatter),
 		GenHTTPOpenapi3JSON: http.FileServer(fileSystemGenHTTPOpenapi3JSON),
 	}
 }
@@ -86,35 +79,34 @@ func (s *Server) Service() string { return "goatfacts" }
 
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
-	s.GetFact = m(s.GetFact)
 	s.ListFacts = m(s.ListFacts)
-	s.GetRandomFact = m(s.GetRandomFact)
+	s.RandomFacts = m(s.RandomFacts)
+	s.Index = m(s.Index)
 }
 
 // Mount configures the mux to serve the goatfacts endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
-	MountGetFactHandler(mux, h.GetFact)
 	MountListFactsHandler(mux, h.ListFacts)
-	MountGetRandomFactHandler(mux, h.GetRandomFact)
-	MountGenHTTPOpenapiJSON(mux, goahttp.ReplacePrefix("/swagger.json", "/./gen/http/openapi.json", h.GenHTTPOpenapiJSON))
-	MountGenHTTPOpenapi3JSON(mux, goahttp.ReplacePrefix("/openapi.json", "/./gen/http/openapi3.json", h.GenHTTPOpenapi3JSON))
+	MountRandomFactsHandler(mux, h.RandomFacts)
+	MountIndexHandler(mux, h.Index)
+	MountGenHTTPOpenapi3JSON(mux, goahttp.ReplacePrefix("/api/openapi.json", "/./gen/http/openapi3.json", h.GenHTTPOpenapi3JSON))
 }
 
-// MountGetFactHandler configures the mux to serve the "goatfacts" service
-// "get-fact" endpoint.
-func MountGetFactHandler(mux goahttp.Muxer, h http.Handler) {
+// MountListFactsHandler configures the mux to serve the "goatfacts" service
+// "ListFacts" endpoint.
+func MountListFactsHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := h.(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/facts/{id}", f)
+	mux.Handle("GET", "/api/facts", f)
 }
 
-// NewGetFactHandler creates a HTTP handler which loads the HTTP request and
-// calls the "goatfacts" service "get-fact" endpoint.
-func NewGetFactHandler(
+// NewListFactsHandler creates a HTTP handler which loads the HTTP request and
+// calls the "goatfacts" service "ListFacts" endpoint.
+func NewListFactsHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -123,13 +115,57 @@ func NewGetFactHandler(
 	formatter func(err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeGetFactRequest(mux, decoder)
-		encodeResponse = EncodeGetFactResponse(encoder)
-		encodeError    = EncodeGetFactError(encoder, formatter)
+		encodeResponse = EncodeListFactsResponse(encoder)
+		encodeError    = goahttp.ErrorEncoder(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "get-fact")
+		ctx = context.WithValue(ctx, goa.MethodKey, "ListFacts")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "goatfacts")
+		var err error
+		res, err := endpoint(ctx, nil)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountRandomFactsHandler configures the mux to serve the "goatfacts" service
+// "RandomFacts" endpoint.
+func MountRandomFactsHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := h.(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/api/facts/random", f)
+}
+
+// NewRandomFactsHandler creates a HTTP handler which loads the HTTP request
+// and calls the "goatfacts" service "RandomFacts" endpoint.
+func NewRandomFactsHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeRandomFactsRequest(mux, decoder)
+		encodeResponse = EncodeRandomFactsResponse(encoder)
+		encodeError    = EncodeRandomFactsError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "RandomFacts")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "goatfacts")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -151,21 +187,21 @@ func NewGetFactHandler(
 	})
 }
 
-// MountListFactsHandler configures the mux to serve the "goatfacts" service
-// "list-facts" endpoint.
-func MountListFactsHandler(mux goahttp.Muxer, h http.Handler) {
+// MountIndexHandler configures the mux to serve the "goatfacts" service
+// "Index" endpoint.
+func MountIndexHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := h.(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/facts", f)
+	mux.Handle("GET", "/", f)
 }
 
-// NewListFactsHandler creates a HTTP handler which loads the HTTP request and
-// calls the "goatfacts" service "list-facts" endpoint.
-func NewListFactsHandler(
+// NewIndexHandler creates a HTTP handler which loads the HTTP request and
+// calls the "goatfacts" service "Index" endpoint.
+func NewIndexHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -174,12 +210,12 @@ func NewListFactsHandler(
 	formatter func(err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		encodeResponse = EncodeListFactsResponse(encoder)
+		encodeResponse = EncodeIndexResponse(encoder)
 		encodeError    = goahttp.ErrorEncoder(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "list-facts")
+		ctx = context.WithValue(ctx, goa.MethodKey, "Index")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "goatfacts")
 		var err error
 		res, err := endpoint(ctx, nil)
@@ -193,60 +229,10 @@ func NewListFactsHandler(
 			errhandler(ctx, w, err)
 		}
 	})
-}
-
-// MountGetRandomFactHandler configures the mux to serve the "goatfacts"
-// service "get-random-fact" endpoint.
-func MountGetRandomFactHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := h.(http.HandlerFunc)
-	if !ok {
-		f = func(w http.ResponseWriter, r *http.Request) {
-			h.ServeHTTP(w, r)
-		}
-	}
-	mux.Handle("GET", "/facts/random", f)
-}
-
-// NewGetRandomFactHandler creates a HTTP handler which loads the HTTP request
-// and calls the "goatfacts" service "get-random-fact" endpoint.
-func NewGetRandomFactHandler(
-	endpoint goa.Endpoint,
-	mux goahttp.Muxer,
-	decoder func(*http.Request) goahttp.Decoder,
-	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
-	errhandler func(context.Context, http.ResponseWriter, error),
-	formatter func(err error) goahttp.Statuser,
-) http.Handler {
-	var (
-		encodeResponse = EncodeGetRandomFactResponse(encoder)
-		encodeError    = EncodeGetRandomFactError(encoder, formatter)
-	)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "get-random-fact")
-		ctx = context.WithValue(ctx, goa.ServiceKey, "goatfacts")
-		var err error
-		res, err := endpoint(ctx, nil)
-		if err != nil {
-			if err := encodeError(ctx, w, err); err != nil {
-				errhandler(ctx, w, err)
-			}
-			return
-		}
-		if err := encodeResponse(ctx, w, res); err != nil {
-			errhandler(ctx, w, err)
-		}
-	})
-}
-
-// MountGenHTTPOpenapiJSON configures the mux to serve GET request made to
-// "/swagger.json".
-func MountGenHTTPOpenapiJSON(mux goahttp.Muxer, h http.Handler) {
-	mux.Handle("GET", "/swagger.json", h.ServeHTTP)
 }
 
 // MountGenHTTPOpenapi3JSON configures the mux to serve GET request made to
-// "/openapi.json".
+// "/api/openapi.json".
 func MountGenHTTPOpenapi3JSON(mux goahttp.Muxer, h http.Handler) {
-	mux.Handle("GET", "/openapi.json", h.ServeHTTP)
+	mux.Handle("GET", "/api/openapi.json", h.ServeHTTP)
 }

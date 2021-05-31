@@ -39,9 +39,14 @@ func main() {
 	// Initialize the services.
 	var (
 		goatFactsSvc goatfacts.Service
+		err          error
 	)
 	{
-		goatFactsSvc = goatopsfarm.NewGoatFactsService(logger)
+		goatFactsSvc, err = goatopsfarm.NewGoatFactsService(logger)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to initialize goat facts service: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	// Wrap the services in endpoints that can be invoked from other services
@@ -72,7 +77,7 @@ func main() {
 	switch *hostF {
 	case "localhost":
 		{
-			addr := "http://localhost:8080"
+			addr := "http://0.0.0.0:8080"
 			u, err := url.Parse(addr)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "invalid URL %#v: %s\n", addr, err)

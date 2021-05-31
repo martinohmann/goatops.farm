@@ -15,48 +15,48 @@ import (
 
 // Endpoints wraps the "goatfacts" service endpoints.
 type Endpoints struct {
-	GetFact       goa.Endpoint
-	ListFacts     goa.Endpoint
-	GetRandomFact goa.Endpoint
+	ListFacts   goa.Endpoint
+	RandomFacts goa.Endpoint
+	Index       goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "goatfacts" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		GetFact:       NewGetFactEndpoint(s),
-		ListFacts:     NewListFactsEndpoint(s),
-		GetRandomFact: NewGetRandomFactEndpoint(s),
+		ListFacts:   NewListFactsEndpoint(s),
+		RandomFacts: NewRandomFactsEndpoint(s),
+		Index:       NewIndexEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "goatfacts" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
-	e.GetFact = m(e.GetFact)
 	e.ListFacts = m(e.ListFacts)
-	e.GetRandomFact = m(e.GetRandomFact)
-}
-
-// NewGetFactEndpoint returns an endpoint function that calls the method
-// "get-fact" of service "goatfacts".
-func NewGetFactEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*GetFactPayload)
-		return s.GetFact(ctx, p)
-	}
+	e.RandomFacts = m(e.RandomFacts)
+	e.Index = m(e.Index)
 }
 
 // NewListFactsEndpoint returns an endpoint function that calls the method
-// "list-facts" of service "goatfacts".
+// "ListFacts" of service "goatfacts".
 func NewListFactsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		return s.ListFacts(ctx)
 	}
 }
 
-// NewGetRandomFactEndpoint returns an endpoint function that calls the method
-// "get-random-fact" of service "goatfacts".
-func NewGetRandomFactEndpoint(s Service) goa.Endpoint {
+// NewRandomFactsEndpoint returns an endpoint function that calls the method
+// "RandomFacts" of service "goatfacts".
+func NewRandomFactsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return s.GetRandomFact(ctx)
+		p := req.(*RandomFactsPayload)
+		return s.RandomFacts(ctx, p)
+	}
+}
+
+// NewIndexEndpoint returns an endpoint function that calls the method "Index"
+// of service "goatfacts".
+func NewIndexEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		return s.Index(ctx)
 	}
 }

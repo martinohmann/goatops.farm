@@ -15,54 +15,49 @@ import (
 
 // Client is the "goatfacts" service client.
 type Client struct {
-	GetFactEndpoint       goa.Endpoint
-	ListFactsEndpoint     goa.Endpoint
-	GetRandomFactEndpoint goa.Endpoint
+	ListFactsEndpoint   goa.Endpoint
+	RandomFactsEndpoint goa.Endpoint
+	IndexEndpoint       goa.Endpoint
 }
 
 // NewClient initializes a "goatfacts" service client given the endpoints.
-func NewClient(getFact, listFacts, getRandomFact goa.Endpoint) *Client {
+func NewClient(listFacts, randomFacts, index goa.Endpoint) *Client {
 	return &Client{
-		GetFactEndpoint:       getFact,
-		ListFactsEndpoint:     listFacts,
-		GetRandomFactEndpoint: getRandomFact,
+		ListFactsEndpoint:   listFacts,
+		RandomFactsEndpoint: randomFacts,
+		IndexEndpoint:       index,
 	}
 }
 
-// GetFact calls the "get-fact" endpoint of the "goatfacts" service.
-// GetFact may return the following errors:
-//	- "NotFound" (type *goa.ServiceError)
-//	- "BadRequest" (type *goa.ServiceError)
-//	- error: internal error
-func (c *Client) GetFact(ctx context.Context, p *GetFactPayload) (res *Fact, err error) {
-	var ires interface{}
-	ires, err = c.GetFactEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.(*Fact), nil
-}
-
-// ListFacts calls the "list-facts" endpoint of the "goatfacts" service.
-func (c *Client) ListFacts(ctx context.Context) (res []*Fact, err error) {
+// ListFacts calls the "ListFacts" endpoint of the "goatfacts" service.
+func (c *Client) ListFacts(ctx context.Context) (res []string, err error) {
 	var ires interface{}
 	ires, err = c.ListFactsEndpoint(ctx, nil)
 	if err != nil {
 		return
 	}
-	return ires.([]*Fact), nil
+	return ires.([]string), nil
 }
 
-// GetRandomFact calls the "get-random-fact" endpoint of the "goatfacts"
-// service.
-// GetRandomFact may return the following errors:
-//	- "NotFound" (type *goa.ServiceError)
+// RandomFacts calls the "RandomFacts" endpoint of the "goatfacts" service.
+// RandomFacts may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError)
 //	- error: internal error
-func (c *Client) GetRandomFact(ctx context.Context) (res *Fact, err error) {
+func (c *Client) RandomFacts(ctx context.Context, p *RandomFactsPayload) (res []string, err error) {
 	var ires interface{}
-	ires, err = c.GetRandomFactEndpoint(ctx, nil)
+	ires, err = c.RandomFactsEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*Fact), nil
+	return ires.([]string), nil
+}
+
+// Index calls the "Index" endpoint of the "goatfacts" service.
+func (c *Client) Index(ctx context.Context) (res []byte, err error) {
+	var ires interface{}
+	ires, err = c.IndexEndpoint(ctx, nil)
+	if err != nil {
+		return
+	}
+	return ires.([]byte), nil
 }

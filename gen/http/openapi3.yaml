@@ -7,12 +7,73 @@ servers:
 - url: http://localhost:8080
 - url: https://goatops.farm
 paths:
-  /facts:
+  /:
     get:
       tags:
       - goatfacts
-      summary: list-facts goatfacts
-      operationId: goatfacts#list-facts
+      summary: Index goatfacts
+      operationId: goatfacts#Index
+      responses:
+        "200":
+          description: OK response.
+          content:
+            text/html:
+              schema:
+                type: string
+                example:
+                - 69
+                - 115
+                - 115
+                - 101
+                - 32
+                - 100
+                - 111
+                - 108
+                - 111
+                - 114
+                - 32
+                - 100
+                - 111
+                - 108
+                - 111
+                - 114
+                - 101
+                - 32
+                - 101
+                - 115
+                - 115
+                - 101
+                - 46
+                format: binary
+              example:
+              - 69
+              - 116
+              - 32
+              - 97
+              - 117
+              - 116
+              - 32
+              - 110
+              - 101
+              - 99
+              - 101
+              - 115
+              - 115
+              - 105
+              - 116
+              - 97
+              - 116
+              - 105
+              - 98
+              - 117
+              - 115
+              - 46
+  /api/facts:
+    get:
+      tags:
+      - goatfacts
+      summary: ListFacts goatfacts
+      operationId: goatfacts#ListFacts
       responses:
         "200":
           description: OK response.
@@ -21,47 +82,47 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Fact'
+                  type: string
+                  example: Beatae recusandae.
                 example:
-                - id: 123abc
-                  text: Goats will not rick-roll you
-                - id: 123abc
-                  text: Goats will not rick-roll you
-                - id: 123abc
-                  text: Goats will not rick-roll you
-                - id: 123abc
-                  text: Goats will not rick-roll you
+                - Modi sint saepe.
+                - Quae est ullam velit quasi.
               example:
-              - id: 123abc
-                text: Goats will not rick-roll you
-              - id: 123abc
-                text: Goats will not rick-roll you
-  /facts/{id}:
+              - Rerum recusandae blanditiis ex.
+              - Itaque ullam voluptatem sit molestias.
+  /api/facts/random:
     get:
       tags:
       - goatfacts
-      summary: get-fact goatfacts
-      operationId: goatfacts#get-fact
+      summary: RandomFacts goatfacts
+      operationId: goatfacts#RandomFacts
       parameters:
-      - name: id
-        in: path
-        description: ID of the fact
-        required: true
+      - name: "n"
+        in: query
+        description: Number of random facts
+        allowEmptyValue: true
         schema:
-          type: string
-          description: ID of the fact
-          example: Molestias molestiae accusantium quo adipisci illum.
-        example: Dolorem dolore qui a voluptas.
+          type: integer
+          description: Number of random facts
+          example: 9059312564685485055
+          format: int64
+        example: 6983850233654289973
       responses:
         "200":
           description: OK response.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Fact'
+                type: array
+                items:
+                  type: string
+                  example: Perspiciatis rem ad repellat consequatur culpa.
+                example:
+                - Perspiciatis beatae fugiat nesciunt explicabo.
+                - Cum voluptas est alias aut eius.
               example:
-                id: 123abc
-                text: Goats will not rick-roll you
+              - Ea non rerum aut esse quia mollitia.
+              - Fugiat temporibus vero expedita.
         "400":
           description: Bad Request response.
           content:
@@ -72,57 +133,12 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
-        "404":
-          description: Not Found response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-  /facts/random:
-    get:
-      tags:
-      - goatfacts
-      summary: get-random-fact goatfacts
-      operationId: goatfacts#get-random-fact
-      responses:
-        "200":
-          description: OK response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Fact'
-              example:
-                id: 123abc
-                text: Goats will not rick-roll you
-        "404":
-          description: Not Found response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-  /openapi.json:
+  /api/openapi.json:
     get:
       tags:
       - goatfacts
       summary: Download ./gen/http/openapi3.json
-      operationId: goatfacts#/openapi.json
-      responses:
-        "200":
-          description: File downloaded
-  /swagger.json:
-    get:
-      tags:
-      - goatfacts
-      summary: Download ./gen/http/openapi.json
-      operationId: goatfacts#/swagger.json
+      operationId: goatfacts#/api/openapi.json
       responses:
         "200":
           description: File downloaded
@@ -156,7 +172,7 @@ components:
         timeout:
           type: boolean
           description: Is the error a timeout?
-          example: true
+          example: false
       example:
         id: 3F1FKVRR
         message: Value of ID must be an integer
@@ -168,25 +184,6 @@ components:
       - temporary
       - timeout
       - fault
-    Fact:
-      type: object
-      properties:
-        id:
-          type: string
-          description: A unique ID
-          example: 123abc
-          minLength: 1
-          maxLength: 255
-        text:
-          type: string
-          description: Fact text
-          example: Goats will not rick-roll you
-      example:
-        id: 123abc
-        text: Goats will not rick-roll you
-      required:
-      - id
-      - text
 tags:
 - name: goatfacts
   description: The goatfacts service provides you with important facts about goats.

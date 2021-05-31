@@ -1,4 +1,6 @@
 coverage.txt
 vendor/
 /dist
-/goatops.farm
+/gen-facts
+/goatopsfarm
+/goatopsfarm-cli

@@ -7,21 +7,17 @@
 
 package client
 
-import (
-	"fmt"
-)
-
-// GetFactGoatfactsPath returns the URL path to the goatfacts service get-fact HTTP endpoint.
-func GetFactGoatfactsPath(id string) string {
-	return fmt.Sprintf("/facts/%v", id)
-}
-
-// ListFactsGoatfactsPath returns the URL path to the goatfacts service list-facts HTTP endpoint.
+// ListFactsGoatfactsPath returns the URL path to the goatfacts service ListFacts HTTP endpoint.
 func ListFactsGoatfactsPath() string {
-	return "/facts"
+	return "/api/facts"
 }
 
-// GetRandomFactGoatfactsPath returns the URL path to the goatfacts service get-random-fact HTTP endpoint.
-func GetRandomFactGoatfactsPath() string {
-	return "/facts/random"
+// RandomFactsGoatfactsPath returns the URL path to the goatfacts service RandomFacts HTTP endpoint.
+func RandomFactsGoatfactsPath() string {
+	return "/api/facts/random"
+}
+
+// IndexGoatfactsPath returns the URL path to the goatfacts service Index HTTP endpoint.
+func IndexGoatfactsPath() string {
+	return "/"
 }

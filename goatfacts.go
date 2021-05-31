@@ -17,69 +17,120 @@
 package goatopsfarm
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"html/template"
 	"log"
 	"math/rand"
-	"strconv"
 
 	goatfacts "github.com/martinohmann/goatops.farm/gen/goatfacts"
+	goa "goa.design/goa/v3/pkg"
 )
-
-var (
-	goatFacts    []*goatfacts.Fact
-	goatFactsMap map[string]*goatfacts.Fact
-)
-
-func init() {
-	goatFactsMap = make(map[string]*goatfacts.Fact)
-
-	for i, fact := range facts {
-		goatFact := &goatfacts.Fact{
-			ID:   strconv.Itoa(i + 1),
-			Text: fact,
-		}
-		goatFacts = append(goatFacts, goatFact)
-		goatFactsMap[goatFact.ID] = goatFact
-	}
-}
 
 // goatfacts service example implementation.
 // The example methods log the requests and return zero values.
 type goatFactsSvc struct {
-	logger *log.Logger
+	logger   *log.Logger
+	indexTpl *template.Template
+	facts    []string
 }
 
 // NewGoatFactsService returns the goatfacts service implementation.
-func NewGoatFactsService(logger *log.Logger) goatfacts.Service {
-	return &goatFactsSvc{logger}
+func NewGoatFactsService(logger *log.Logger) (goatfacts.Service, error) {
+	tpl, err := template.New("index").Parse(indexTemplate)
+	if err != nil {
+		return nil, err
+	}
+	svc := &goatFactsSvc{
+		logger:   logger,
+		indexTpl: tpl,
+		facts:    facts,
+	}
+	return svc, nil
 }
 
-// GetFact implements get-fact.
-func (s *goatFactsSvc) GetFact(ctx context.Context, p *goatfacts.GetFactPayload) (*goatfacts.Fact, error) {
-	s.logger.Print("goatfacts.get-fact")
+func (s *goatFactsSvc) ListFacts(ctx context.Context) ([]string, error) {
+	s.logger.Print("goatfacts.ListFacts")
+	return s.facts, nil
+}
 
-	fact, ok := goatFactsMap[p.ID]
-	if !ok {
-		return nil, goatfacts.MakeNotFound(errors.New("not found"))
+func (s *goatFactsSvc) RandomFacts(ctx context.Context, payload *goatfacts.RandomFactsPayload) ([]string, error) {
+	s.logger.Print("goatfacts.RandomFacts")
+
+	var n int = 5
+	if payload.N != nil {
+		n = *payload.N
 	}
 
-	return fact, nil
-}
-
-// ListFacts implements list-facts.
-func (s *goatFactsSvc) ListFacts(ctx context.Context) ([]*goatfacts.Fact, error) {
-	s.logger.Print("goatfacts.list-facts")
-	return goatFacts, nil
-}
-
-// GetRandomFact implements get-random-fact.
-func (s *goatFactsSvc) GetRandomFact(ctx context.Context) (*goatfacts.Fact, error) {
-	s.logger.Print("goatfacts.get-random-fact")
-
-	if len(goatFacts) == 0 {
-		return nil, goatfacts.MakeNotFound(errors.New("not found"))
+	facts, err := s.randomFacts(n)
+	if err != nil {
+		return nil, goatfacts.MakeBadRequest(err)
 	}
 
-	return goatFacts[rand.Intn(len(goatFacts))], nil
+	return facts, nil
 }
+
+func (s *goatFactsSvc) Index(context.Context) ([]byte, error) {
+	var buf bytes.Buffer
+
+	facts, _ := s.randomFacts(5)
+
+	data := struct {
+		Facts []string
+	}{
+		Facts: facts,
+	}
+
+	if err := s.indexTpl.Execute(&buf, data); err != nil {
+		return nil, goa.Fault(err.Error())
+	}
+
+	return buf.Bytes(), nil
+}
+
+func (s *goatFactsSvc) randomFacts(n int) ([]string, error) {
+	if n <= 0 {
+		return nil, errors.New("n must be > 0")
+	}
+
+	if n > len(s.facts) {
+		n = len(s.facts)
+	}
+
+	selection := make([]string, 0, n)
+	for i := 0; i < n; i++ {
+		fact := s.facts[rand.Intn(len(s.facts))]
+		selection = append(selection, fact)
+	}
+
+	return selection, nil
+}
+
+var indexTemplate = `<!DOCTYPE html>
+<html>
+<head>
+  <title>goatops.farm</title>
+</head>
+<body>
+  <h1>Something you should know about goats</h1>
+{{ with .Facts }}
+  <ol>
+{{ range $fact := . }}
+    <li>{{ $fact }}</li>
+{{ end }}
+  </ol>
+{{ end }}
+
+  <h2>JSON API</h2>
+  <p>
+    <a href="/api/openapi.json">/api/openapi.json</a>
+  </p>
+  <p>
+    Source code on <a href="https://github.com/martinohmann/goatops.farm">GitHub</a>.
+  </p>
+  <p>
+    Goat facts generated from <a href="https://github.com/binford2k/goatops">https://github.com/binford2k/goatops</a>.
+  </p>
+</body>
+</html>`

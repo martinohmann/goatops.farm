@@ -15,12 +15,12 @@ import (
 
 // The goatfacts service provides you with important facts about goats.
 type Service interface {
-	// GetFact implements get-fact.
-	GetFact(context.Context, *GetFactPayload) (res *Fact, err error)
-	// ListFacts implements list-facts.
-	ListFacts(context.Context) (res []*Fact, err error)
-	// GetRandomFact implements get-random-fact.
-	GetRandomFact(context.Context) (res *Fact, err error)
+	// ListFacts implements ListFacts.
+	ListFacts(context.Context) (res []string, err error)
+	// RandomFacts implements RandomFacts.
+	RandomFacts(context.Context, *RandomFactsPayload) (res []string, err error)
+	// Index implements Index.
+	Index(context.Context) (res []byte, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -31,29 +31,13 @@ const ServiceName = "goatfacts"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [3]string{"get-fact", "list-facts", "get-random-fact"}
+var MethodNames = [3]string{"ListFacts", "RandomFacts", "Index"}
 
-// GetFactPayload is the payload type of the goatfacts service get-fact method.
-type GetFactPayload struct {
-	// ID of the fact
-	ID string
-}
-
-// Fact is the result type of the goatfacts service get-fact method.
-type Fact struct {
-	// A unique ID
-	ID string
-	// Fact text
-	Text string
-}
-
-// MakeNotFound builds a goa.ServiceError from an error.
-func MakeNotFound(err error) *goa.ServiceError {
-	return &goa.ServiceError{
-		Name:    "NotFound",
-		ID:      goa.NewErrorID(),
-		Message: err.Error(),
-	}
+// RandomFactsPayload is the payload type of the goatfacts service RandomFacts
+// method.
+type RandomFactsPayload struct {
+	// Number of random facts
+	N *int
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.

@@ -17,17 +17,16 @@ import (
 
 // Client lists the goatfacts service endpoint HTTP clients.
 type Client struct {
-	// GetFact Doer is the HTTP client used to make requests to the get-fact
-	// endpoint.
-	GetFactDoer goahttp.Doer
-
-	// ListFacts Doer is the HTTP client used to make requests to the list-facts
+	// ListFacts Doer is the HTTP client used to make requests to the ListFacts
 	// endpoint.
 	ListFactsDoer goahttp.Doer
 
-	// GetRandomFact Doer is the HTTP client used to make requests to the
-	// get-random-fact endpoint.
-	GetRandomFactDoer goahttp.Doer
+	// RandomFacts Doer is the HTTP client used to make requests to the RandomFacts
+	// endpoint.
+	RandomFactsDoer goahttp.Doer
+
+	// Index Doer is the HTTP client used to make requests to the Index endpoint.
+	IndexDoer goahttp.Doer
 
 	// RestoreResponseBody controls whether the response bodies are reset after
 	// decoding so they can be read again.
@@ -49,9 +48,9 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
-		GetFactDoer:         doer,
 		ListFactsDoer:       doer,
-		GetRandomFactDoer:   doer,
+		RandomFactsDoer:     doer,
+		IndexDoer:           doer,
 		RestoreResponseBody: restoreBody,
 		scheme:              scheme,
 		host:                host,
@@ -60,27 +59,8 @@ func NewClient(
 	}
 }
 
-// GetFact returns an endpoint that makes HTTP requests to the goatfacts
-// service get-fact server.
-func (c *Client) GetFact() goa.Endpoint {
-	var (
-		decodeResponse = DecodeGetFactResponse(c.decoder, c.RestoreResponseBody)
-	)
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildGetFactRequest(ctx, v)
-		if err != nil {
-			return nil, err
-		}
-		resp, err := c.GetFactDoer.Do(req)
-		if err != nil {
-			return nil, goahttp.ErrRequestError("goatfacts", "get-fact", err)
-		}
-		return decodeResponse(resp)
-	}
-}
-
 // ListFacts returns an endpoint that makes HTTP requests to the goatfacts
-// service list-facts server.
+// service ListFacts server.
 func (c *Client) ListFacts() goa.Endpoint {
 	var (
 		decodeResponse = DecodeListFactsResponse(c.decoder, c.RestoreResponseBody)
@@ -92,26 +72,50 @@ func (c *Client) ListFacts() goa.Endpoint {
 		}
 		resp, err := c.ListFactsDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("goatfacts", "list-facts", err)
+			return nil, goahttp.ErrRequestError("goatfacts", "ListFacts", err)
 		}
 		return decodeResponse(resp)
 	}
 }
 
-// GetRandomFact returns an endpoint that makes HTTP requests to the goatfacts
-// service get-random-fact server.
-func (c *Client) GetRandomFact() goa.Endpoint {
+// RandomFacts returns an endpoint that makes HTTP requests to the goatfacts
+// service RandomFacts server.
+func (c *Client) RandomFacts() goa.Endpoint {
 	var (
-		decodeResponse = DecodeGetRandomFactResponse(c.decoder, c.RestoreResponseBody)
+		encodeRequest  = EncodeRandomFactsRequest(c.encoder)
+		decodeResponse = DecodeRandomFactsResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildGetRandomFactRequest(ctx, v)
+		req, err := c.BuildRandomFactsRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.GetRandomFactDoer.Do(req)
+		err = encodeRequest(req, v)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("goatfacts", "get-random-fact", err)
+			return nil, err
+		}
+		resp, err := c.RandomFactsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("goatfacts", "RandomFacts", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// Index returns an endpoint that makes HTTP requests to the goatfacts service
+// Index server.
+func (c *Client) Index() goa.Endpoint {
+	var (
+		decodeResponse = DecodeIndexResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildIndexRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.IndexDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("goatfacts", "Index", err)
 		}
 		return decodeResponse(resp)
 	}

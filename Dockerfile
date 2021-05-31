@@ -7,17 +7,19 @@ COPY go.sum .
 
 RUN go mod download
 
-COPY main.go .
-COPY tools/ tools/
+COPY gen/ gen/
+COPY cmd/ cmd/
+COPY goatfacts.go .
 
 RUN go generate
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -o goatops.farm
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" ./cmd/goatopsfarm
 
 FROM scratch
 
 WORKDIR /app
 
-COPY --from=builder /src/goatops.farm /app/goatops.farm
+COPY --from=builder /src/goatopsfarm /app/goatopsfarm
+COPY --from=builder /src/gen/http/openapi3.json /app/gen/http/openapi3.json
 
-CMD ["/app/goatops.farm"] 
+CMD ["/app/goatopsfarm"]

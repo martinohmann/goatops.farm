@@ -12,31 +12,9 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// GetFactResponseBody is the type of the "goatfacts" service "get-fact"
-// endpoint HTTP response body.
-type GetFactResponseBody struct {
-	// A unique ID
-	ID string `form:"id" json:"id" xml:"id"`
-	// Fact text
-	Text string `form:"text" json:"text" xml:"text"`
-}
-
-// ListFactsResponseBody is the type of the "goatfacts" service "list-facts"
-// endpoint HTTP response body.
-type ListFactsResponseBody []*Fact
-
-// GetRandomFactResponseBody is the type of the "goatfacts" service
-// "get-random-fact" endpoint HTTP response body.
-type GetRandomFactResponseBody struct {
-	// A unique ID
-	ID string `form:"id" json:"id" xml:"id"`
-	// Fact text
-	Text string `form:"text" json:"text" xml:"text"`
-}
-
-// GetFactNotFoundResponseBody is the type of the "goatfacts" service
-// "get-fact" endpoint HTTP response body for the "NotFound" error.
-type GetFactNotFoundResponseBody struct {
+// RandomFactsBadRequestResponseBody is the type of the "goatfacts" service
+// "RandomFacts" endpoint HTTP response body for the "BadRequest" error.
+type RandomFactsBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -52,84 +30,10 @@ type GetFactNotFoundResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// GetFactBadRequestResponseBody is the type of the "goatfacts" service
-// "get-fact" endpoint HTTP response body for the "BadRequest" error.
-type GetFactBadRequestResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// GetRandomFactNotFoundResponseBody is the type of the "goatfacts" service
-// "get-random-fact" endpoint HTTP response body for the "NotFound" error.
-type GetRandomFactNotFoundResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// Fact is used to define fields on response body types.
-type Fact struct {
-	// A unique ID
-	ID string `form:"id" json:"id" xml:"id"`
-	// Fact text
-	Text string `form:"text" json:"text" xml:"text"`
-}
-
-// NewGetFactResponseBody builds the HTTP response body from the result of the
-// "get-fact" endpoint of the "goatfacts" service.
-func NewGetFactResponseBody(res *goatfacts.Fact) *GetFactResponseBody {
-	body := &GetFactResponseBody{
-		ID:   res.ID,
-		Text: res.Text,
-	}
-	return body
-}
-
-// NewListFactsResponseBody builds the HTTP response body from the result of
-// the "list-facts" endpoint of the "goatfacts" service.
-func NewListFactsResponseBody(res []*goatfacts.Fact) ListFactsResponseBody {
-	body := make([]*Fact, len(res))
-	for i, val := range res {
-		body[i] = marshalGoatfactsFactToFact(val)
-	}
-	return body
-}
-
-// NewGetRandomFactResponseBody builds the HTTP response body from the result
-// of the "get-random-fact" endpoint of the "goatfacts" service.
-func NewGetRandomFactResponseBody(res *goatfacts.Fact) *GetRandomFactResponseBody {
-	body := &GetRandomFactResponseBody{
-		ID:   res.ID,
-		Text: res.Text,
-	}
-	return body
-}
-
-// NewGetFactNotFoundResponseBody builds the HTTP response body from the result
-// of the "get-fact" endpoint of the "goatfacts" service.
-func NewGetFactNotFoundResponseBody(res *goa.ServiceError) *GetFactNotFoundResponseBody {
-	body := &GetFactNotFoundResponseBody{
+// NewRandomFactsBadRequestResponseBody builds the HTTP response body from the
+// result of the "RandomFacts" endpoint of the "goatfacts" service.
+func NewRandomFactsBadRequestResponseBody(res *goa.ServiceError) *RandomFactsBadRequestResponseBody {
+	body := &RandomFactsBadRequestResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -140,38 +44,11 @@ func NewGetFactNotFoundResponseBody(res *goa.ServiceError) *GetFactNotFoundRespo
 	return body
 }
 
-// NewGetFactBadRequestResponseBody builds the HTTP response body from the
-// result of the "get-fact" endpoint of the "goatfacts" service.
-func NewGetFactBadRequestResponseBody(res *goa.ServiceError) *GetFactBadRequestResponseBody {
-	body := &GetFactBadRequestResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewGetRandomFactNotFoundResponseBody builds the HTTP response body from the
-// result of the "get-random-fact" endpoint of the "goatfacts" service.
-func NewGetRandomFactNotFoundResponseBody(res *goa.ServiceError) *GetRandomFactNotFoundResponseBody {
-	body := &GetRandomFactNotFoundResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewGetFactPayload builds a goatfacts service get-fact endpoint payload.
-func NewGetFactPayload(id string) *goatfacts.GetFactPayload {
-	v := &goatfacts.GetFactPayload{}
-	v.ID = id
+// NewRandomFactsPayload builds a goatfacts service RandomFacts endpoint
+// payload.
+func NewRandomFactsPayload(n *int) *goatfacts.RandomFactsPayload {
+	v := &goatfacts.RandomFactsPayload{}
+	v.N = n
 
 	return v
 }

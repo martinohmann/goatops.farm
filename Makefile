@@ -11,7 +11,8 @@ help:
 
 .PHONY: build
 build: ## build goatops.farm
-	go build -ldflags "-s -w" -o goatops.farm
+	go build -ldflags "-s -w" ./cmd/goatopsfarm
+	go build -ldflags "-s -w" ./cmd/goatopsfarm-cli
 
 .PHONY: install
 install: build ## install goatops.farm

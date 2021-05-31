@@ -23,13 +23,13 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `goatfacts (get-fact|list-facts|get-random-fact)
+	return `goatfacts (list-facts|random-facts|index)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` goatfacts get-fact --id "Deleniti reprehenderit cumque et."` + "\n" +
+	return os.Args[0] + ` goatfacts list-facts` + "\n" +
 		""
 }
 
@@ -45,17 +45,17 @@ func ParseEndpoint(
 	var (
 		goatfactsFlags = flag.NewFlagSet("goatfacts", flag.ContinueOnError)
 
-		goatfactsGetFactFlags  = flag.NewFlagSet("get-fact", flag.ExitOnError)
-		goatfactsGetFactIDFlag = goatfactsGetFactFlags.String("id", "REQUIRED", "ID of the fact")
-
 		goatfactsListFactsFlags = flag.NewFlagSet("list-facts", flag.ExitOnError)
 
-		goatfactsGetRandomFactFlags = flag.NewFlagSet("get-random-fact", flag.ExitOnError)
+		goatfactsRandomFactsFlags = flag.NewFlagSet("random-facts", flag.ExitOnError)
+		goatfactsRandomFactsNFlag = goatfactsRandomFactsFlags.String("n", "", "")
+
+		goatfactsIndexFlags = flag.NewFlagSet("index", flag.ExitOnError)
 	)
 	goatfactsFlags.Usage = goatfactsUsage
-	goatfactsGetFactFlags.Usage = goatfactsGetFactUsage
 	goatfactsListFactsFlags.Usage = goatfactsListFactsUsage
-	goatfactsGetRandomFactFlags.Usage = goatfactsGetRandomFactUsage
+	goatfactsRandomFactsFlags.Usage = goatfactsRandomFactsUsage
+	goatfactsIndexFlags.Usage = goatfactsIndexUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -91,14 +91,14 @@ func ParseEndpoint(
 		switch svcn {
 		case "goatfacts":
 			switch epn {
-			case "get-fact":
-				epf = goatfactsGetFactFlags
-
 			case "list-facts":
 				epf = goatfactsListFactsFlags
 
-			case "get-random-fact":
-				epf = goatfactsGetRandomFactFlags
+			case "random-facts":
+				epf = goatfactsRandomFactsFlags
+
+			case "index":
+				epf = goatfactsIndexFlags
 
 			}
 
@@ -125,14 +125,14 @@ func ParseEndpoint(
 		case "goatfacts":
 			c := goatfactsc.NewClient(scheme, host, doer, enc, dec, restore)
 			switch epn {
-			case "get-fact":
-				endpoint = c.GetFact()
-				data, err = goatfactsc.BuildGetFactPayload(*goatfactsGetFactIDFlag)
 			case "list-facts":
 				endpoint = c.ListFacts()
 				data = nil
-			case "get-random-fact":
-				endpoint = c.GetRandomFact()
+			case "random-facts":
+				endpoint = c.RandomFacts()
+				data, err = goatfactsc.BuildRandomFactsPayload(*goatfactsRandomFactsNFlag)
+			case "index":
+				endpoint = c.Index()
 				data = nil
 			}
 		}
@@ -152,41 +152,41 @@ Usage:
     %s [globalflags] goatfacts COMMAND [flags]
 
 COMMAND:
-    get-fact: GetFact implements get-fact.
-    list-facts: ListFacts implements list-facts.
-    get-random-fact: GetRandomFact implements get-random-fact.
+    list-facts: ListFacts implements ListFacts.
+    random-facts: RandomFacts implements RandomFacts.
+    index: Index implements Index.
 
 Additional help:
     %s goatfacts COMMAND --help
 `, os.Args[0], os.Args[0])
 }
-func goatfactsGetFactUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] goatfacts get-fact -id STRING
-
-GetFact implements get-fact.
-    -id STRING: ID of the fact
-
-Example:
-    `+os.Args[0]+` goatfacts get-fact --id "Deleniti reprehenderit cumque et."
-`, os.Args[0])
-}
-
 func goatfactsListFactsUsage() {
 	fmt.Fprintf(os.Stderr, `%s [flags] goatfacts list-facts
 
-ListFacts implements list-facts.
+ListFacts implements ListFacts.
 
 Example:
     `+os.Args[0]+` goatfacts list-facts
 `, os.Args[0])
 }
 
-func goatfactsGetRandomFactUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] goatfacts get-random-fact
+func goatfactsRandomFactsUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] goatfacts random-facts -n INT
 
-GetRandomFact implements get-random-fact.
+RandomFacts implements RandomFacts.
+    -n INT: 
 
 Example:
-    `+os.Args[0]+` goatfacts get-random-fact
+    `+os.Args[0]+` goatfacts random-facts --n 2874550282530042957
+`, os.Args[0])
+}
+
+func goatfactsIndexUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] goatfacts index
+
+Index implements Index.
+
+Example:
+    `+os.Args[0]+` goatfacts index
 `, os.Args[0])
 }
