@@ -1,6 +1,9 @@
 package design
 
-import . "goa.design/goa/v3/dsl"
+import (
+	. "goa.design/goa/v3/dsl"
+	cors "goa.design/plugins/v3/cors/dsl"
+)
 
 var _ = API("goatopsfarm", func() {
 	Title("Goat facts Service")
@@ -18,6 +21,8 @@ var _ = API("goatopsfarm", func() {
 
 var _ = Service("goatfacts", func() {
 	Description("The goatfacts service provides you with important facts about goats.")
+
+	cors.Origin("*")
 
 	Method("ListFacts", func() {
 		Result(ArrayOf(String))
@@ -59,4 +64,5 @@ var _ = Service("goatfacts", func() {
 	})
 
 	Files("/api/openapi.json", "./gen/http/openapi3.json")
+	Files("/static/{*path}", "./static")
 })

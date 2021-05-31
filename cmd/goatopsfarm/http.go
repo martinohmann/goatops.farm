@@ -52,7 +52,7 @@ func handleHTTPServer(ctx context.Context, u *url.URL, goatfactsEndpoints *goatf
 	)
 	{
 		eh := errorHandler(logger)
-		goatfactsServer = goatfactssvr.New(goatfactsEndpoints, mux, dec, enc, eh, nil, nil)
+		goatfactsServer = goatfactssvr.New(goatfactsEndpoints, mux, dec, enc, eh, nil, nil, nil)
 		if debug {
 			servers := goahttp.Servers{
 				goatfactsServer,

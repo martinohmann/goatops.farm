@@ -23,6 +23,7 @@ type Server struct {
 	RandomFacts         http.Handler
 	Index               http.Handler
 	GenHTTPOpenapi3JSON http.Handler
+	Static              http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -56,9 +57,13 @@ func New(
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
 	fileSystemGenHTTPOpenapi3JSON http.FileSystem,
+	fileSystemStatic http.FileSystem,
 ) *Server {
 	if fileSystemGenHTTPOpenapi3JSON == nil {
 		fileSystemGenHTTPOpenapi3JSON = http.Dir(".")
+	}
+	if fileSystemStatic == nil {
+		fileSystemStatic = http.Dir(".")
 	}
 	return &Server{
 		Mounts: []*MountPoint{
@@ -66,11 +71,13 @@ func New(
 			{"RandomFacts", "GET", "/api/facts/random"},
 			{"Index", "GET", "/"},
 			{"./gen/http/openapi3.json", "GET", "/api/openapi.json"},
+			{"./static", "GET", "/static"},
 		},
 		ListFacts:           NewListFactsHandler(e.ListFacts, mux, decoder, encoder, errhandler, formatter),
 		RandomFacts:         NewRandomFactsHandler(e.RandomFacts, mux, decoder, encoder, errhandler, formatter),
 		Index:               NewIndexHandler(e.Index, mux, decoder, encoder, errhandler, formatter),
 		GenHTTPOpenapi3JSON: http.FileServer(fileSystemGenHTTPOpenapi3JSON),
+		Static:              http.FileServer(fileSystemStatic),
 	}
 }
 
@@ -90,6 +97,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountRandomFactsHandler(mux, h.RandomFacts)
 	MountIndexHandler(mux, h.Index)
 	MountGenHTTPOpenapi3JSON(mux, goahttp.ReplacePrefix("/api/openapi.json", "/./gen/http/openapi3.json", h.GenHTTPOpenapi3JSON))
+	MountStatic(mux, goahttp.ReplacePrefix("/static", "/./static", h.Static))
 }
 
 // MountListFactsHandler configures the mux to serve the "goatfacts" service
@@ -235,4 +243,10 @@ func NewIndexHandler(
 // "/api/openapi.json".
 func MountGenHTTPOpenapi3JSON(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("GET", "/api/openapi.json", h.ServeHTTP)
+}
+
+// MountStatic configures the mux to serve GET request made to "/static".
+func MountStatic(mux goahttp.Muxer, h http.Handler) {
+	mux.Handle("GET", "/static/", h.ServeHTTP)
+	mux.Handle("GET", "/static/*path", h.ServeHTTP)
 }

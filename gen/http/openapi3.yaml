@@ -21,28 +21,38 @@ paths:
               schema:
                 type: string
                 example:
-                - 69
-                - 115
-                - 115
+                - 65
+                - 117
+                - 116
+                - 32
                 - 101
+                - 105
+                - 117
+                - 115
                 - 32
                 - 100
                 - 111
                 - 108
                 - 111
                 - 114
+                - 101
+                - 115
                 - 32
-                - 100
-                - 111
-                - 108
-                - 111
+                - 112
+                - 101
                 - 114
-                - 101
+                - 115
+                - 112
+                - 105
+                - 99
+                - 105
+                - 97
+                - 116
+                - 105
+                - 115
                 - 32
-                - 101
-                - 115
-                - 115
-                - 101
+                - 97
+                - 98
                 - 46
                 format: binary
               example:
@@ -83,13 +93,14 @@ paths:
                 type: array
                 items:
                   type: string
-                  example: Beatae recusandae.
+                  example: Recusandae vel dolorum.
                 example:
-                - Modi sint saepe.
-                - Quae est ullam velit quasi.
+                - Saepe ipsum quae est.
+                - Velit quasi quaerat perspiciatis.
+                - Ad repellat.
               example:
-              - Rerum recusandae blanditiis ex.
-              - Itaque ullam voluptatem sit molestias.
+              - Dolor dolore esse temporibus error rerum.
+              - Blanditiis ex alias.
   /api/facts/random:
     get:
       tags:
@@ -104,9 +115,9 @@ paths:
         schema:
           type: integer
           description: Number of random facts
-          example: 9059312564685485055
+          example: 8103290738173953045
           format: int64
-        example: 6983850233654289973
+        example: 8035204789576502952
       responses:
         "200":
           description: OK response.
@@ -116,12 +127,14 @@ paths:
                 type: array
                 items:
                   type: string
-                  example: Perspiciatis rem ad repellat consequatur culpa.
+                  example: Culpa veniam.
                 example:
-                - Perspiciatis beatae fugiat nesciunt explicabo.
-                - Cum voluptas est alias aut eius.
+                - Beatae fugiat.
+                - Explicabo nihil.
               example:
-              - Ea non rerum aut esse quia mollitia.
+              - Molestias voluptate id.
+              - Inventore ea.
+              - Rerum aut esse quia mollitia.
               - Fugiat temporibus vero expedita.
         "400":
           description: Bad Request response.
@@ -142,6 +155,22 @@ paths:
       responses:
         "200":
           description: File downloaded
+  /static/{*path}:
+    get:
+      tags:
+      - goatfacts
+      summary: Download ./static
+      operationId: goatfacts#/static/{*path}
+      parameters:
+      - name: path
+        in: path
+        description: Relative file path
+        required: true
+      responses:
+        "200":
+          description: File not found
+        "404":
+          description: File not found
 components:
   schemas:
     Error:

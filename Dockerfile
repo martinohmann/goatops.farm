@@ -9,6 +9,7 @@ RUN go mod download
 
 COPY gen/ gen/
 COPY cmd/ cmd/
+COPY static/ static/
 COPY goatfacts.go .
 
 RUN go generate
@@ -21,5 +22,6 @@ WORKDIR /app
 
 COPY --from=builder /src/goatopsfarm /app/goatopsfarm
 COPY --from=builder /src/gen/http/openapi3.json /app/gen/http/openapi3.json
+COPY --from=builder /src/static /app/static
 
 CMD ["/app/goatopsfarm"]

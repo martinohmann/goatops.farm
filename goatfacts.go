@@ -124,7 +124,7 @@ var indexTemplate = `<!DOCTYPE html>
 
   <h2>JSON API</h2>
   <p>
-    <a href="/api/openapi.json">/api/openapi.json</a>
+    See <a href="/static/swagger">swagger-ui</a> for API endpoint docs.
   </p>
   <p>
     Source code on <a href="https://github.com/martinohmann/goatops.farm">GitHub</a>.
