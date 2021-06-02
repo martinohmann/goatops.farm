@@ -1,10 +1,24 @@
+// Copyright 2021 martinohmann
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -18,9 +32,7 @@ import (
 	"goa.design/goa/v3/middleware"
 )
 
-// handleHTTPServer starts configures and starts a HTTP server on the given
-// URL. It shuts down the server if any error is received in the error channel.
-func handleHTTPServer(ctx context.Context, u *url.URL, factsEndpoints *facts.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
+func startServer(ctx context.Context, listenAddr string, factsEndpoints *facts.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, redirectHTTPS, debug bool) {
 	// Setup goa log adapter.
 	adapter := middleware.NewLogger(logger)
 
@@ -61,12 +73,15 @@ func handleHTTPServer(ctx context.Context, u *url.URL, factsEndpoints *facts.End
 	// here apply to all the service endpoints.
 	var handler http.Handler = mux
 
+	if redirectHTTPS {
+		handler = redirect(handler)
+	}
 	handler = httpmdlwr.Log(adapter)(handler)
 	handler = httpmdlwr.RequestID()(handler)
 
 	// Start HTTP server using default configuration, change the code to
 	// configure the server as required by your service.
-	srv := &http.Server{Addr: u.Host, Handler: handler}
+	srv := &http.Server{Addr: listenAddr, Handler: handler}
 
 	for _, m := range staticServer.Mounts {
 		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
@@ -76,18 +91,18 @@ func handleHTTPServer(ctx context.Context, u *url.URL, factsEndpoints *facts.End
 		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
 
-	(*wg).Add(1)
+	wg.Add(1)
 	go func() {
-		defer (*wg).Done()
+		defer wg.Done()
 
 		// Start HTTP server in a separate goroutine.
 		go func() {
-			logger.Printf("HTTP server listening on %q", u.Host)
+			logger.Printf("HTTP server listening on %q", listenAddr)
 			errc <- srv.ListenAndServe()
 		}()
 
 		<-ctx.Done()
-		logger.Printf("shutting down HTTP server at %q", u.Host)
+		logger.Printf("shutting down HTTP server at %q", listenAddr)
 
 		// Shutdown gracefully with a 30s timeout.
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -106,4 +121,16 @@ func errorHandler(logger *log.Logger) func(context.Context, http.ResponseWriter,
 		_, _ = w.Write([]byte("[" + id + "] encoding: " + err.Error()))
 		logger.Printf("[%s] ERROR: %s", id, err.Error())
 	}
+}
+
+func redirect(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		proto := r.Header.Get("X-Forwarded-Proto")
+		if proto == "http" || proto == "HTTP" {
+			http.Redirect(w, r, fmt.Sprintf("https://%s%s", r.Host, r.URL), http.StatusPermanentRedirect)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
 }

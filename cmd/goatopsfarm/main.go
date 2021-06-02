@@ -1,3 +1,17 @@
+// Copyright 2021 martinohmann
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -5,8 +19,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
-	"net/url"
 	"os"
 	"os/signal"
 	"sync"
@@ -17,33 +29,19 @@ import (
 )
 
 func main() {
-	// Define command line flags, add any other flag required to configure the
-	// service.
-	var (
-		hostF     = flag.String("host", "localhost", "Server host (valid values: localhost, goatops.farm)")
-		domainF   = flag.String("domain", "", "Host domain name (overrides host domain specified in service design)")
-		httpPortF = flag.String("http-port", "", "HTTP port (overrides host HTTP port specified in service design)")
-		secureF   = flag.Bool("secure", false, "Use secure scheme (https or grpcs)")
-		dbgF      = flag.Bool("debug", false, "Log request and response bodies")
-	)
+	listenAddr := flag.String("listen-addr", "0.0.0.0:8080", "Address to listen on")
+	debug := flag.Bool("debug", false, "Log request and response bodies")
+	redirectHTTPS := flag.Bool("redirect-https", true, "Redirect HTTP to HTTPS")
+
 	flag.Parse()
 
-	// Setup logger. Replace logger with your own log package of choice.
 	logger := log.New(os.Stderr, "[goatopsfarm] ", log.Ltime)
 
-	// Initialize the services.
 	factsSvc := goatopsfarm.NewFactsService(logger)
-
-	// Wrap the services in endpoints that can be invoked from other services
-	// potentially running in different processes.
 	factsEndpoints := facts.NewEndpoints(factsSvc)
 
-	// Create channel used by both the signal handler and server goroutines
-	// to notify the main goroutine when to stop the server.
 	errc := make(chan error)
 
-	// Setup interrupt handler. This optional step configures the process so
-	// that SIGINT and SIGTERM signals cause the services to stop gracefully.
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
@@ -53,70 +51,10 @@ func main() {
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Start the servers and send errors (if any) to the error channel.
-	switch *hostF {
-	case "localhost":
-		{
-			addr := "http://0.0.0.0:8080"
-			u, err := url.Parse(addr)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "invalid URL %#v: %s\n", addr, err)
-				os.Exit(1)
-			}
-			if *secureF {
-				u.Scheme = "https"
-			}
-			if *domainF != "" {
-				u.Host = *domainF
-			}
-			if *httpPortF != "" {
-				h, _, err := net.SplitHostPort(u.Host)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "invalid URL %#v: %s\n", u.Host, err)
-					os.Exit(1)
-				}
-				u.Host = net.JoinHostPort(h, *httpPortF)
-			} else if u.Port() == "" {
-				u.Host = net.JoinHostPort(u.Host, ":80")
-			}
-			handleHTTPServer(ctx, u, factsEndpoints, &wg, errc, logger, *dbgF)
-		}
+	startServer(ctx, *listenAddr, factsEndpoints, &wg, errc, logger, *redirectHTTPS, *debug)
 
-	case "goatops.farm":
-		{
-			addr := "https://goatops.farm"
-			u, err := url.Parse(addr)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "invalid URL %#v: %s\n", addr, err)
-				os.Exit(1)
-			}
-			if *secureF {
-				u.Scheme = "https"
-			}
-			if *domainF != "" {
-				u.Host = *domainF
-			}
-			if *httpPortF != "" {
-				h, _, err := net.SplitHostPort(u.Host)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "invalid URL %#v: %s\n", u.Host, err)
-					os.Exit(1)
-				}
-				u.Host = net.JoinHostPort(h, *httpPortF)
-			} else if u.Port() == "" {
-				u.Host = net.JoinHostPort(u.Host, ":443")
-			}
-			handleHTTPServer(ctx, u, factsEndpoints, &wg, errc, logger, *dbgF)
-		}
-
-	default:
-		fmt.Fprintf(os.Stderr, "invalid host argument: %q (valid hosts: localhost|goatops.farm)\n", *hostF)
-	}
-
-	// Wait for signal.
 	logger.Printf("exiting (%v)", <-errc)
 
-	// Send cancellation signal to the goroutines.
 	cancel()
 
 	wg.Wait()
