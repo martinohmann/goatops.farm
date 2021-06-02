@@ -105,7 +105,7 @@ func EncodeListRandomRequest(encoder func(*http.Request) goahttp.Encoder) func(*
 // facts list-random endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
 // DecodeListRandomResponse may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "bad_request" (type *goa.ServiceError): http.StatusBadRequest
 //	- error: internal error
 func DecodeListRandomResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {

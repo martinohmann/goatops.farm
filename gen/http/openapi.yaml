@@ -129,7 +129,7 @@ definitions:
         type: boolean
         description: Is the error a timeout?
         example: true
-    description: list-random_BadRequest_response_body result type (default view)
+    description: Bad request payload (default view)
     example:
       fault: true
       id: 123abc

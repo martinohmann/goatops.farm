@@ -78,7 +78,7 @@ func EncodeListRandomError(encoder func(context.Context, http.ResponseWriter) go
 			return encodeError(ctx, w, v)
 		}
 		switch en.ErrorName() {
-		case "BadRequest":
+		case "bad_request":
 			res := v.(*goa.ServiceError)
 			enc := encoder(ctx, w)
 			var body interface{}

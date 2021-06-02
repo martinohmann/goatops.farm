@@ -13,7 +13,7 @@ import (
 )
 
 // ListRandomBadRequestResponseBody is the type of the "facts" service
-// "list-random" endpoint HTTP response body for the "BadRequest" error.
+// "list-random" endpoint HTTP response body for the "bad_request" error.
 type ListRandomBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`

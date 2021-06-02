@@ -41,7 +41,7 @@ var _ = Service("facts", func() {
 
 		Result(ArrayOf(String))
 
-		Error("BadRequest")
+		Error("bad_request", ErrorResult, "Bad request payload")
 
 		HTTP(func() {
 			GET("/api/v1/facts/random")
@@ -51,7 +51,7 @@ var _ = Service("facts", func() {
 				})
 			})
 			Response(StatusOK)
-			Response("BadRequest", StatusBadRequest)
+			Response("bad_request", StatusBadRequest)
 		})
 	})
 })

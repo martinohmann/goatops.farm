@@ -39,7 +39,7 @@ func (c *Client) List(ctx context.Context) (res []string, err error) {
 
 // ListRandom calls the "list-random" endpoint of the "facts" service.
 // ListRandom may return the following errors:
-//	- "BadRequest" (type *goa.ServiceError)
+//	- "bad_request" (type *goa.ServiceError): Bad request payload
 //	- error: internal error
 func (c *Client) ListRandom(ctx context.Context, p *ListRandomPayload) (res []string, err error) {
 	var ires interface{}

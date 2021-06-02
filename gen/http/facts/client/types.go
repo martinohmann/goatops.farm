@@ -12,7 +12,7 @@ import (
 )
 
 // ListRandomBadRequestResponseBody is the type of the "facts" service
-// "list-random" endpoint HTTP response body for the "BadRequest" error.
+// "list-random" endpoint HTTP response body for the "bad_request" error.
 type ListRandomBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
@@ -30,7 +30,7 @@ type ListRandomBadRequestResponseBody struct {
 }
 
 // NewListRandomBadRequest builds a facts service list-random endpoint
-// BadRequest error.
+// bad_request error.
 func NewListRandomBadRequest(body *ListRandomBadRequestResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
@@ -45,7 +45,7 @@ func NewListRandomBadRequest(body *ListRandomBadRequestResponseBody) *goa.Servic
 }
 
 // ValidateListRandomBadRequestResponseBody runs the validations defined on
-// list-random_BadRequest_response_body
+// list-random_bad_request_response_body
 func ValidateListRandomBadRequestResponseBody(body *ListRandomBadRequestResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))

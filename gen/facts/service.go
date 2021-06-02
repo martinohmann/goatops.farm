@@ -42,7 +42,7 @@ type ListRandomPayload struct {
 // MakeBadRequest builds a goa.ServiceError from an error.
 func MakeBadRequest(err error) *goa.ServiceError {
 	return &goa.ServiceError{
-		Name:    "BadRequest",
+		Name:    "bad_request",
 		ID:      goa.NewErrorID(),
 		Message: err.Error(),
 	}

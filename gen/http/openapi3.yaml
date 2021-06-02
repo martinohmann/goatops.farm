@@ -132,6 +132,7 @@ components:
           type: boolean
           description: Is the error a timeout?
           example: false
+      description: Bad request payload
       example:
         id: 3F1FKVRR
         message: Value of ID must be an integer
