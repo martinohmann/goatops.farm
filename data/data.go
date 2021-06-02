@@ -21,7 +21,6 @@ var Creatures []*creatures.Creature
 func init() {
 	Creatures = []*creatures.Creature{
 		{Name: "goat", Facts: goatFacts},
-		//@TODO(mohmann): add alpaka facts
-		{Name: "alpaka"},
+		{Name: "sloth", Facts: slothFacts},
 	}
 }
