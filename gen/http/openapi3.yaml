@@ -32,13 +32,14 @@ paths:
                 type: array
                 items:
                   type: string
-                  example: Quos dolor.
+                  example: Recusandae vel dolorum.
                 example:
-                - Quibusdam perspiciatis dignissimos.
-                - Qui unde non impedit quos.
+                - Saepe ipsum quae est.
+                - Velit quasi quaerat perspiciatis.
+                - Ad repellat.
               example:
-              - Consequatur culpa veniam tenetur.
-              - Beatae fugiat.
+              - Eius dolores perspiciatis ab.
+              - Esse dolor dolore esse.
   /api/v1/facts/random:
     get:
       tags:
@@ -53,9 +54,9 @@ paths:
         schema:
           type: integer
           description: Number of random facts
-          example: 2032390880600127203
+          example: 10
           format: int64
-        example: 2044007140922159932
+        example: 10
       responses:
         "200":
           description: OK response.
@@ -65,13 +66,13 @@ paths:
                 type: array
                 items:
                   type: string
-                  example: Ea eaque beatae recusandae.
+                  example: Culpa veniam.
                 example:
-                - Modi sint saepe.
-                - Quae est ullam velit quasi.
+                - Beatae fugiat.
+                - Explicabo nihil.
               example:
-              - Voluptas est alias aut eius.
-              - Perspiciatis ab.
+              - Rerum recusandae blanditiis ex.
+              - Itaque ullam voluptatem sit molestias.
         "400":
           description: Bad Request response.
           content:
@@ -126,7 +127,7 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: true
+          example: false
         timeout:
           type: boolean
           description: Is the error a timeout?

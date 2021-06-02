@@ -41,7 +41,7 @@ paths:
             type: array
             items:
               type: string
-              example: Est quod velit.
+              example: Similique et consectetur quis quia quos dolor.
       schemes:
       - https
   /api/v1/facts/random:
@@ -63,7 +63,7 @@ paths:
             type: array
             items:
               type: string
-              example: Et praesentium recusandae.
+              example: Rerum quibusdam perspiciatis dignissimos molestias qui unde.
         "400":
           description: Bad Request response.
           schema:
@@ -106,7 +106,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the

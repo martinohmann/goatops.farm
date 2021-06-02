@@ -166,6 +166,6 @@ ListRandom implements list-random.
     -n INT: 
 
 Example:
-    `+os.Args[0]+` facts list-random --n 2874550282530042957
+    `+os.Args[0]+` facts list-random --n 10
 `, os.Args[0])
 }

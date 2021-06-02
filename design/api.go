@@ -46,7 +46,9 @@ var _ = Service("facts", func() {
 		HTTP(func() {
 			GET("/api/v1/facts/random")
 			Params(func() {
-				Param("n")
+				Param("n", func() {
+					Example(10)
+				})
 			})
 			Response(StatusOK)
 			Response("BadRequest", StatusBadRequest)
