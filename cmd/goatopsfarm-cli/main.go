@@ -1,3 +1,17 @@
+// Copyright 2021 martinohmann
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -5,104 +19,94 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
+	cli "github.com/martinohmann/goatops.farm/gen/http/cli/goatopsfarm"
+	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
 
 func main() {
-	var (
-		hostF = flag.String("host", "localhost", "Server host (valid values: localhost, goatops.farm)")
-		addrF = flag.String("url", "", "URL to service host")
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+}
 
-		verboseF = flag.Bool("verbose", false, "Print request and response details")
-		vF       = flag.Bool("v", false, "Print request and response details")
-		timeoutF = flag.Int("timeout", 30, "Maximum number of seconds to wait for response")
-	)
+func run() error {
+	serverURL := flag.String("url", "https://goatops.farm", "URL to service host")
+	verbose := flag.Bool("verbose", false, "Print request and response details")
+	v := flag.Bool("v", false, "Print request and response details")
+	timeout := flag.Int("timeout", 30, "Maximum number of seconds to wait for response")
+
 	flag.Usage = usage
 	flag.Parse()
-	var (
-		addr    string
-		timeout int
-		debug   bool
-	)
-	{
-		addr = *addrF
-		if addr == "" {
-			switch *hostF {
-			case "localhost":
-				addr = "http://localhost:8080"
-			case "goatops.farm":
-				addr = "https://goatops.farm"
-			default:
-				fmt.Fprintf(os.Stderr, "invalid host argument: %q (valid hosts: localhost|goatops.farm)\n", *hostF)
-				os.Exit(1)
-			}
-		}
-		timeout = *timeoutF
-		debug = *verboseF || *vF
+
+	debug := *verbose || *v
+
+	u, err := url.Parse(*serverURL)
+	if err != nil {
+		return err
 	}
 
-	var (
-		scheme string
-		host   string
-	)
-	{
-		u, err := url.Parse(addr)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "invalid URL %#v: %s\n", addr, err)
-			os.Exit(1)
-		}
-		scheme = u.Scheme
-		host = u.Host
-	}
-	var (
-		endpoint goa.Endpoint
-		payload  interface{}
-		err      error
-	)
-	{
-		switch scheme {
-		case "http", "https":
-			endpoint, payload, err = doHTTP(scheme, host, timeout, debug)
-		default:
-			fmt.Fprintf(os.Stderr, "invalid scheme: %q (valid schemes: http|https)\n", scheme)
-			os.Exit(1)
-		}
-	}
+	endpoint, payload, err := parseEndpoint(u.Scheme, u.Host, *timeout, debug)
 	if err != nil {
 		if err == flag.ErrHelp {
-			os.Exit(0)
+			return nil
 		}
-		fmt.Fprintln(os.Stderr, err.Error())
-		fmt.Fprintln(os.Stderr, "run '"+os.Args[0]+" --help' for detailed usage.")
-		os.Exit(1)
+
+		return fmt.Errorf("%w: run '%s --help' for detailed usage", err, os.Args[0])
 	}
 
 	data, err := endpoint(context.Background(), payload)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
+		return err
 	}
 
 	if data != nil {
-		m, _ := json.MarshalIndent(data, "", "    ")
+		m, err := json.MarshalIndent(data, "", "    ")
+		if err != nil {
+			return err
+		}
+
 		fmt.Println(string(m))
 	}
+
+	return nil
+}
+
+func parseEndpoint(scheme, host string, timeout int, debug bool) (goa.Endpoint, interface{}, error) {
+	var doer goahttp.Doer
+	{
+		doer = &http.Client{Timeout: time.Duration(timeout) * time.Second}
+		if debug {
+			doer = goahttp.NewDebugDoer(doer)
+		}
+	}
+
+	return cli.ParseEndpoint(
+		scheme,
+		host,
+		doer,
+		goahttp.RequestEncoder,
+		goahttp.ResponseDecoder,
+		debug,
+	)
 }
 
 func usage() {
 	fmt.Fprintf(os.Stderr, `%s is a command line client for the goatopsfarm API.
 
 Usage:
-    %s [-host HOST][-url URL][-timeout SECONDS][-verbose|-v] SERVICE ENDPOINT [flags]
+    %s [-url URL][-timeout SECONDS][-verbose|-v] SERVICE ENDPOINT [flags]
 
-    -host HOST:  server host (localhost). valid values: localhost, goatops.farm
-    -url URL:    specify service URL overriding host URL (http://localhost:8080)
-    -timeout:    maximum number of seconds to wait for response (30)
-    -verbose|-v: print request and response details (false)
+    -url URL     specify service URL overriding host URL (https://goatops.farm)
+    -timeout     maximum number of seconds to wait for response (30)
+    -verbose|-v  print request and response details (false)
 
 Commands:
 %s
@@ -111,12 +115,13 @@ Additional help:
 
 Example:
 %s
-`, os.Args[0], os.Args[0], indent(httpUsageCommands()), os.Args[0], indent(httpUsageExamples()))
+`, os.Args[0], os.Args[0], indent(cli.UsageCommands()), os.Args[0], indent(cli.UsageExamples()))
 }
 
 func indent(s string) string {
 	if s == "" {
 		return ""
 	}
+
 	return "    " + strings.Replace(s, "\n", "\n    ", -1)
 }
