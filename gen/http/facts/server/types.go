@@ -12,6 +12,20 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
+// ListResponseBody is the type of the "facts" service "list" endpoint HTTP
+// response body.
+type ListResponseBody struct {
+	// List of facts
+	Facts []string `form:"facts" json:"facts" xml:"facts"`
+}
+
+// ListRandomResponseBody is the type of the "facts" service "list-random"
+// endpoint HTTP response body.
+type ListRandomResponseBody struct {
+	// List of random facts
+	Facts []string `form:"facts" json:"facts" xml:"facts"`
+}
+
 // ListRandomBadRequestResponseBody is the type of the "facts" service
 // "list-random" endpoint HTTP response body for the "bad_request" error.
 type ListRandomBadRequestResponseBody struct {
@@ -28,6 +42,32 @@ type ListRandomBadRequestResponseBody struct {
 	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
 	// Is the error a server-side fault?
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// NewListResponseBody builds the HTTP response body from the result of the
+// "list" endpoint of the "facts" service.
+func NewListResponseBody(res *facts.ListResult) *ListResponseBody {
+	body := &ListResponseBody{}
+	if res.Facts != nil {
+		body.Facts = make([]string, len(res.Facts))
+		for i, val := range res.Facts {
+			body.Facts[i] = val
+		}
+	}
+	return body
+}
+
+// NewListRandomResponseBody builds the HTTP response body from the result of
+// the "list-random" endpoint of the "facts" service.
+func NewListRandomResponseBody(res *facts.ListRandomResult) *ListRandomResponseBody {
+	body := &ListRandomResponseBody{}
+	if res.Facts != nil {
+		body.Facts = make([]string, len(res.Facts))
+		for i, val := range res.Facts {
+			body.Facts[i] = val
+		}
+	}
+	return body
 }
 
 // NewListRandomBadRequestResponseBody builds the HTTP response body from the

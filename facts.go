@@ -21,6 +21,7 @@ import (
 	"errors"
 	"log"
 	"math/rand"
+	"time"
 
 	"github.com/martinohmann/goatops.farm/gen/facts"
 )
@@ -28,22 +29,23 @@ import (
 type factsSvc struct {
 	logger *log.Logger
 	facts  []string
+	rand   *rand.Rand
 }
 
 func NewFactsService(logger *log.Logger) facts.Service {
-	svc := &factsSvc{
+	return &factsSvc{
 		logger: logger,
 		facts:  goatFacts, // @TODO(martinohmann): support other creatures as well
+		rand:   rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
-	return svc
 }
 
-func (s *factsSvc) List(ctx context.Context) ([]string, error) {
+func (s *factsSvc) List(ctx context.Context) (*facts.ListResult, error) {
 	s.logger.Print("facts.List")
-	return s.facts, nil
+	return &facts.ListResult{Facts: s.facts}, nil
 }
 
-func (s *factsSvc) ListRandom(ctx context.Context, payload *facts.ListRandomPayload) ([]string, error) {
+func (s *factsSvc) ListRandom(ctx context.Context, payload *facts.ListRandomPayload) (*facts.ListRandomResult, error) {
 	s.logger.Print("facts.ListRandom")
 
 	var n int = 5
@@ -51,28 +53,42 @@ func (s *factsSvc) ListRandom(ctx context.Context, payload *facts.ListRandomPayl
 		n = *payload.N
 	}
 
-	res, err := s.randomFacts(n)
+	fs, err := s.randomFacts(n)
 	if err != nil {
 		return nil, facts.MakeBadRequest(err)
+	}
+
+	res := &facts.ListRandomResult{
+		Facts: fs,
 	}
 
 	return res, nil
 }
 
 func (s *factsSvc) randomFacts(n int) ([]string, error) {
-	if n <= 0 {
-		return nil, errors.New("n must be > 0")
+	if n < 0 {
+		return nil, errors.New("n must be >= 0")
 	}
 
 	if n > len(s.facts) {
 		n = len(s.facts)
 	}
 
-	selection := make([]string, 0, n)
-	for i := 0; i < n; i++ {
-		fact := s.facts[rand.Intn(len(s.facts))]
-		selection = append(selection, fact)
-	}
+	switch {
+	case n == 0:
+		return []string{}, nil
+	case n == 1:
+		fact := s.facts[s.rand.Intn(len(s.facts))]
+		return []string{fact}, nil
+	default:
+		res := make([]string, len(s.facts))
 
-	return selection, nil
+		copy(res, s.facts)
+
+		rand.Shuffle(len(s.facts), func(i, j int) {
+			res[i], res[j] = res[j], res[i]
+		})
+
+		return res[:n], nil
+	}
 }

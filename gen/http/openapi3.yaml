@@ -29,17 +29,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
-                  example: Recusandae vel dolorum.
-                example:
-                - Saepe ipsum quae est.
-                - Velit quasi quaerat perspiciatis.
-                - Ad repellat.
+                $ref: '#/components/schemas/ListResponseBody'
               example:
-              - Eius dolores perspiciatis ab.
-              - Esse dolor dolore esse.
+                facts:
+                - Perspiciatis ut impedit et fugiat et.
+                - Magni quia.
+                - Cumque odit mollitia.
   /api/v1/facts/random:
     get:
       tags:
@@ -63,16 +58,11 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
-                  example: Culpa veniam.
-                example:
-                - Beatae fugiat.
-                - Explicabo nihil.
+                $ref: '#/components/schemas/ListResponseBody'
               example:
-              - Rerum recusandae blanditiis ex.
-              - Itaque ullam voluptatem sit molestias.
+                facts:
+                - Saepe ut sed.
+                - Velit doloremque vel sunt optio officiis.
         "400":
           description: Bad Request response.
           content:
@@ -109,7 +99,7 @@ components:
         fault:
           type: boolean
           description: Is the error a server-side fault?
-          example: true
+          example: false
         id:
           type: string
           description: ID is a unique identifier for this particular occurrence of
@@ -144,6 +134,25 @@ components:
       - temporary
       - timeout
       - fault
+    ListResponseBody:
+      type: object
+      properties:
+        facts:
+          type: array
+          items:
+            type: string
+            example: Voluptas est alias aut eius.
+          description: List of facts
+          example:
+          - Ab sapiente esse dolor dolore.
+          - Temporibus error rerum recusandae blanditiis ex.
+          - Itaque ullam voluptatem sit molestias.
+      example:
+        facts:
+        - Deserunt inventore ea non rerum.
+        - Esse quia mollitia officia fugiat temporibus.
+      required:
+      - facts
 tags:
 - name: static
   description: Static pages and site assets

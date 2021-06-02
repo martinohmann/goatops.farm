@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strconv"
 
+	facts "github.com/martinohmann/goatops.farm/gen/facts"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -20,9 +21,9 @@ import (
 // list endpoint.
 func EncodeListResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res, _ := v.([]string)
+		res, _ := v.(*facts.ListResult)
 		enc := encoder(ctx, w)
-		body := res
+		body := NewListResponseBody(res)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
@@ -32,9 +33,9 @@ func EncodeListResponse(encoder func(context.Context, http.ResponseWriter) goaht
 // facts list-random endpoint.
 func EncodeListRandomResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res, _ := v.([]string)
+		res, _ := v.(*facts.ListRandomResult)
 		enc := encoder(ctx, w)
-		body := res
+		body := NewListRandomResponseBody(res)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}

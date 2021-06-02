@@ -17,9 +17,9 @@ import (
 // creatures.
 type Service interface {
 	// List implements list.
-	List(context.Context) (res []string, err error)
+	List(context.Context) (res *ListResult, err error)
 	// ListRandom implements list-random.
-	ListRandom(context.Context, *ListRandomPayload) (res []string, err error)
+	ListRandom(context.Context, *ListRandomPayload) (res *ListRandomResult, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -32,11 +32,23 @@ const ServiceName = "facts"
 // MethodKey key.
 var MethodNames = [2]string{"list", "list-random"}
 
+// ListResult is the result type of the facts service list method.
+type ListResult struct {
+	// List of facts
+	Facts []string
+}
+
 // ListRandomPayload is the payload type of the facts service list-random
 // method.
 type ListRandomPayload struct {
 	// Number of random facts
 	N *int
+}
+
+// ListRandomResult is the result type of the facts service list-random method.
+type ListRandomResult struct {
+	// List of random facts
+	Facts []string
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.

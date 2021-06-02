@@ -28,24 +28,24 @@ func NewClient(list, listRandom goa.Endpoint) *Client {
 }
 
 // List calls the "list" endpoint of the "facts" service.
-func (c *Client) List(ctx context.Context) (res []string, err error) {
+func (c *Client) List(ctx context.Context) (res *ListResult, err error) {
 	var ires interface{}
 	ires, err = c.ListEndpoint(ctx, nil)
 	if err != nil {
 		return
 	}
-	return ires.([]string), nil
+	return ires.(*ListResult), nil
 }
 
 // ListRandom calls the "list-random" endpoint of the "facts" service.
 // ListRandom may return the following errors:
 //	- "bad_request" (type *goa.ServiceError): Bad request payload
 //	- error: internal error
-func (c *Client) ListRandom(ctx context.Context, p *ListRandomPayload) (res []string, err error) {
+func (c *Client) ListRandom(ctx context.Context, p *ListRandomPayload) (res *ListRandomResult, err error) {
 	var ires interface{}
 	ires, err = c.ListRandomEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.([]string), nil
+	return ires.(*ListRandomResult), nil
 }

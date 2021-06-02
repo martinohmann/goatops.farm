@@ -26,7 +26,10 @@ var _ = Service("facts", func() {
 	Description("The facts service provides you with important facts about goats and other creatures.")
 
 	Method("list", func() {
-		Result(ArrayOf(String))
+		Result(func() {
+			Attribute("facts", ArrayOf(String), "List of facts")
+			Required("facts")
+		})
 
 		HTTP(func() {
 			GET("/api/v1/facts")
@@ -36,10 +39,13 @@ var _ = Service("facts", func() {
 
 	Method("list-random", func() {
 		Payload(func() {
-			Field(1, "n", Int, "Number of random facts")
+			Attribute("n", Int, "Number of random facts")
 		})
 
-		Result(ArrayOf(String))
+		Result(func() {
+			Attribute("facts", ArrayOf(String), "List of random facts")
+			Required("facts")
+		})
 
 		Error("bad_request", ErrorResult, "Bad request payload")
 

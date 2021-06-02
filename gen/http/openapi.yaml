@@ -38,10 +38,9 @@ paths:
         "200":
           description: OK response.
           schema:
-            type: array
-            items:
-              type: string
-              example: Similique et consectetur quis quia quos dolor.
+            $ref: '#/definitions/FactsListResponseBody'
+            required:
+            - facts
       schemes:
       - https
   /api/v1/facts/random:
@@ -60,10 +59,9 @@ paths:
         "200":
           description: OK response.
           schema:
-            type: array
-            items:
-              type: string
-              example: Rerum quibusdam perspiciatis dignissimos molestias qui unde.
+            $ref: '#/definitions/FactsListRandomResponseBody'
+            required:
+            - facts
         "400":
           description: Bad Request response.
           schema:
@@ -106,7 +104,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -131,12 +129,12 @@ definitions:
         example: true
     description: Bad request payload (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -144,3 +142,45 @@ definitions:
     - temporary
     - timeout
     - fault
+  FactsListRandomResponseBody:
+    title: FactsListRandomResponseBody
+    type: object
+    properties:
+      facts:
+        type: array
+        items:
+          type: string
+          example: Quibusdam perspiciatis dignissimos.
+        description: List of random facts
+        example:
+        - Unde non impedit.
+        - Magni ea eaque beatae.
+    example:
+      facts:
+      - Dolorum modi sint.
+      - Ipsum quae est ullam velit.
+      - Quaerat perspiciatis rem ad.
+      - Consequatur culpa veniam tenetur.
+    required:
+    - facts
+  FactsListResponseBody:
+    title: FactsListResponseBody
+    type: object
+    properties:
+      facts:
+        type: array
+        items:
+          type: string
+          example: Quidem ab.
+        description: List of facts
+        example:
+        - Cupiditate unde nesciunt doloribus.
+        - Aspernatur expedita velit.
+        - Illum rerum autem quia perspiciatis repudiandae accusantium.
+    example:
+      facts:
+      - Quod velit pariatur.
+      - Praesentium recusandae quae itaque similique.
+      - Consectetur quis quia quos dolor sed.
+    required:
+    - facts

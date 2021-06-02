@@ -8,8 +8,23 @@
 package client
 
 import (
+	facts "github.com/martinohmann/goatops.farm/gen/facts"
 	goa "goa.design/goa/v3/pkg"
 )
+
+// ListResponseBody is the type of the "facts" service "list" endpoint HTTP
+// response body.
+type ListResponseBody struct {
+	// List of facts
+	Facts []string `form:"facts,omitempty" json:"facts,omitempty" xml:"facts,omitempty"`
+}
+
+// ListRandomResponseBody is the type of the "facts" service "list-random"
+// endpoint HTTP response body.
+type ListRandomResponseBody struct {
+	// List of random facts
+	Facts []string `form:"facts,omitempty" json:"facts,omitempty" xml:"facts,omitempty"`
+}
 
 // ListRandomBadRequestResponseBody is the type of the "facts" service
 // "list-random" endpoint HTTP response body for the "bad_request" error.
@@ -29,6 +44,30 @@ type ListRandomBadRequestResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// NewListResultOK builds a "facts" service "list" endpoint result from a HTTP
+// "OK" response.
+func NewListResultOK(body *ListResponseBody) *facts.ListResult {
+	v := &facts.ListResult{}
+	v.Facts = make([]string, len(body.Facts))
+	for i, val := range body.Facts {
+		v.Facts[i] = val
+	}
+
+	return v
+}
+
+// NewListRandomResultOK builds a "facts" service "list-random" endpoint result
+// from a HTTP "OK" response.
+func NewListRandomResultOK(body *ListRandomResponseBody) *facts.ListRandomResult {
+	v := &facts.ListRandomResult{}
+	v.Facts = make([]string, len(body.Facts))
+	for i, val := range body.Facts {
+		v.Facts[i] = val
+	}
+
+	return v
+}
+
 // NewListRandomBadRequest builds a facts service list-random endpoint
 // bad_request error.
 func NewListRandomBadRequest(body *ListRandomBadRequestResponseBody) *goa.ServiceError {
@@ -42,6 +81,23 @@ func NewListRandomBadRequest(body *ListRandomBadRequestResponseBody) *goa.Servic
 	}
 
 	return v
+}
+
+// ValidateListResponseBody runs the validations defined on ListResponseBody
+func ValidateListResponseBody(body *ListResponseBody) (err error) {
+	if body.Facts == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("facts", "body"))
+	}
+	return
+}
+
+// ValidateListRandomResponseBody runs the validations defined on
+// List-RandomResponseBody
+func ValidateListRandomResponseBody(body *ListRandomResponseBody) (err error) {
+	if body.Facts == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("facts", "body"))
+	}
+	return
 }
 
 // ValidateListRandomBadRequestResponseBody runs the validations defined on

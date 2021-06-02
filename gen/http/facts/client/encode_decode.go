@@ -54,14 +54,19 @@ func DecodeListResponse(decoder func(*http.Response) goahttp.Decoder, restoreBod
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body []string
+				body ListResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("facts", "list", err)
 			}
-			return body, nil
+			err = ValidateListResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("facts", "list", err)
+			}
+			res := NewListResultOK(&body)
+			return res, nil
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("facts", "list", resp.StatusCode, string(body))
@@ -124,14 +129,19 @@ func DecodeListRandomResponse(decoder func(*http.Response) goahttp.Decoder, rest
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body []string
+				body ListRandomResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("facts", "list-random", err)
 			}
-			return body, nil
+			err = ValidateListRandomResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("facts", "list-random", err)
+			}
+			res := NewListRandomResultOK(&body)
+			return res, nil
 		case http.StatusBadRequest:
 			var (
 				body ListRandomBadRequestResponseBody
