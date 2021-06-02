@@ -191,6 +191,6 @@ RandomFacts implements random-facts.
     -n INT: 
 
 Example:
-    `+os.Args[0]+` creatures random-facts --name "goat" --n 5
+    `+os.Args[0]+` creatures random-facts --name "goat" --n 3
 `, os.Args[0])
 }

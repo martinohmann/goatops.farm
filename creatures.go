@@ -87,7 +87,10 @@ func (s *creatureSvc) RandomFacts(ctx context.Context, payload *creatures.Random
 		return nil, err
 	}
 
-	var n int = 5
+	n := 3
+	if payload.N != nil {
+		n = *payload.N
+	}
 
 	facts, err := randomSample(s.rand, res.Creature.Facts, n)
 	if err != nil {

@@ -79,7 +79,7 @@ var _ = Service("creatures", func() {
 			GET("/api/v1/creatures/{name}/random-facts")
 			Params(func() {
 				Param("n", func() {
-					Example(5)
+					Example(3)
 				})
 				Param("name", func() {
 					Example("goat")

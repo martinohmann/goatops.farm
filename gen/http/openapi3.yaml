@@ -96,9 +96,9 @@ paths:
         schema:
           type: integer
           description: Number of random facts
-          example: 5
+          example: 3
           format: int64
-        example: 5
+        example: 3
       - name: name
         in: path
         description: Name of the creature
