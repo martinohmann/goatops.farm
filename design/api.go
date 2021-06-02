@@ -7,13 +7,13 @@ import (
 
 var _ = API("goatopsfarm", func() {
 	Title("goatops.farm")
-	Description("Service for obtaining your daily dose of facts about goats and other creatures")
+	Description("Service for obtaining your daily dose of facts about goats and other creatures.")
 	Server("goatopsfarm", func() {
-		Host("goatops.farm", func() {
+		Host("production", func() {
 			Description("public host")
 			URI("https://goatops.farm")
 		})
-		Host("localhost", func() {
+		Host("development", func() {
 			Description("development host")
 			URI("http://localhost:8080")
 		})
@@ -22,42 +22,72 @@ var _ = API("goatopsfarm", func() {
 	cors.Origin("*")
 })
 
-var _ = Service("facts", func() {
-	Description("The facts service provides you with important facts about goats and other creatures.")
+var _ = Service("creatures", func() {
+	Description("The creatures service provides you with farm creatures and facts about them.")
+
+	Error("bad_request")
+	Error("not_found")
 
 	Method("list", func() {
 		Result(func() {
-			Attribute("facts", ArrayOf(String), "List of facts")
-			Required("facts")
+			Attribute("creatures", ArrayOf(Creature), "List of creatures")
+			Required("creatures")
 		})
 
 		HTTP(func() {
-			GET("/api/v1/facts")
+			GET("/api/v1/creatures")
 			Response(StatusOK)
 		})
 	})
 
-	Method("list-random", func() {
+	Method("get", func() {
 		Payload(func() {
-			Attribute("n", Int, "Number of random facts")
+			Attribute("name", String, "Name of the creature")
+			Required("name")
 		})
 
 		Result(func() {
-			Attribute("facts", ArrayOf(String), "List of random facts")
+			Attribute("creature", Creature, "The creature")
+			Required("creature")
+		})
+
+		HTTP(func() {
+			GET("/api/v1/creatures/{name}")
+			Params(func() {
+				Param("name", func() {
+					Example("goat")
+				})
+			})
+			Response(StatusOK)
+			Response("not_found", StatusNotFound)
+		})
+	})
+
+	Method("random-facts", func() {
+		Payload(func() {
+			Attribute("name", String, "Name of the creature")
+			Attribute("n", Int, "Number of random facts")
+			Required("name")
+		})
+
+		Result(func() {
+			Attribute("facts", ArrayOf(String), "Random facts about the creature")
 			Required("facts")
 		})
 
-		Error("bad_request", ErrorResult, "Bad request payload")
-
 		HTTP(func() {
-			GET("/api/v1/facts/random")
+			GET("/api/v1/creatures/{name}/random-facts")
 			Params(func() {
 				Param("n", func() {
-					Example(10)
+					Example(5)
+				})
+				Param("name", func() {
+					Example("goat")
 				})
 			})
 			Response(StatusOK)
 			Response("bad_request", StatusBadRequest)
+			Response("not_found", StatusNotFound)
 		})
 	})
 })
@@ -68,4 +98,10 @@ var _ = Service("static", func() {
 	Files("/", "./static/home.html")
 	Files("/openapi.json", "./gen/http/openapi3.json")
 	Files("/swagger-ui.html", "./static/swagger-ui.html")
+})
+
+var Creature = Type("Creature", func() {
+	Attribute("name", String, "Name of the creature")
+	Attribute("facts", ArrayOf(String), "Facts about the creature")
+	Required("name", "facts")
 })

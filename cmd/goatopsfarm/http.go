@@ -24,15 +24,15 @@ import (
 	"time"
 
 	goatopsfarm "github.com/martinohmann/goatops.farm"
-	"github.com/martinohmann/goatops.farm/gen/facts"
-	factssvr "github.com/martinohmann/goatops.farm/gen/http/facts/server"
+	"github.com/martinohmann/goatops.farm/gen/creatures"
+	creaturessvr "github.com/martinohmann/goatops.farm/gen/http/creatures/server"
 	staticsvr "github.com/martinohmann/goatops.farm/gen/http/static/server"
 	goahttp "goa.design/goa/v3/http"
 	httpmdlwr "goa.design/goa/v3/http/middleware"
 	"goa.design/goa/v3/middleware"
 )
 
-func startServer(ctx context.Context, listenAddr string, factsEndpoints *facts.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, redirectHTTPS, debug bool) {
+func startServer(ctx context.Context, listenAddr string, creaturesEndpoints *creatures.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, redirectHTTPS, debug bool) {
 	// Setup goa log adapter.
 	adapter := middleware.NewLogger(logger)
 
@@ -54,12 +54,12 @@ func startServer(ctx context.Context, listenAddr string, factsEndpoints *facts.E
 	fs := http.FS(goatopsfarm.StaticFS)
 	eh := errorHandler(logger)
 
-	factsServer := factssvr.New(factsEndpoints, mux, dec, enc, eh, nil)
+	creaturesServer := creaturessvr.New(creaturesEndpoints, mux, dec, enc, eh, nil)
 	staticServer := staticsvr.New(nil, mux, dec, enc, eh, nil, fs, fs, fs)
 
 	if debug {
 		servers := goahttp.Servers{
-			factsServer,
+			creaturesServer,
 			staticServer,
 		}
 		servers.Use(httpmdlwr.Debug(mux, os.Stdout))
@@ -67,7 +67,7 @@ func startServer(ctx context.Context, listenAddr string, factsEndpoints *facts.E
 
 	// Configure the mux.
 	staticsvr.Mount(mux, staticServer)
-	factssvr.Mount(mux, factsServer)
+	creaturessvr.Mount(mux, creaturesServer)
 
 	// Wrap the multiplexer with additional middlewares. Middlewares mounted
 	// here apply to all the service endpoints.
@@ -87,7 +87,7 @@ func startServer(ctx context.Context, listenAddr string, factsEndpoints *facts.E
 		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
 
-	for _, m := range factsServer.Mounts {
+	for _, m := range creaturesServer.Mounts {
 		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
 

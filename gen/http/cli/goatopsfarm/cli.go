@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"os"
 
-	factsc "github.com/martinohmann/goatops.farm/gen/http/facts/client"
+	creaturesc "github.com/martinohmann/goatops.farm/gen/http/creatures/client"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -23,13 +23,13 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `facts (list|list-random)
+	return `creatures (list|get|random-facts)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` facts list` + "\n" +
+	return os.Args[0] + ` creatures list` + "\n" +
 		""
 }
 
@@ -43,16 +43,21 @@ func ParseEndpoint(
 	restore bool,
 ) (goa.Endpoint, interface{}, error) {
 	var (
-		factsFlags = flag.NewFlagSet("facts", flag.ContinueOnError)
+		creaturesFlags = flag.NewFlagSet("creatures", flag.ContinueOnError)
 
-		factsListFlags = flag.NewFlagSet("list", flag.ExitOnError)
+		creaturesListFlags = flag.NewFlagSet("list", flag.ExitOnError)
 
-		factsListRandomFlags = flag.NewFlagSet("list-random", flag.ExitOnError)
-		factsListRandomNFlag = factsListRandomFlags.String("n", "", "")
+		creaturesGetFlags    = flag.NewFlagSet("get", flag.ExitOnError)
+		creaturesGetNameFlag = creaturesGetFlags.String("name", "REQUIRED", "Name of the creature")
+
+		creaturesRandomFactsFlags    = flag.NewFlagSet("random-facts", flag.ExitOnError)
+		creaturesRandomFactsNameFlag = creaturesRandomFactsFlags.String("name", "REQUIRED", "Name of the creature")
+		creaturesRandomFactsNFlag    = creaturesRandomFactsFlags.String("n", "", "")
 	)
-	factsFlags.Usage = factsUsage
-	factsListFlags.Usage = factsListUsage
-	factsListRandomFlags.Usage = factsListRandomUsage
+	creaturesFlags.Usage = creaturesUsage
+	creaturesListFlags.Usage = creaturesListUsage
+	creaturesGetFlags.Usage = creaturesGetUsage
+	creaturesRandomFactsFlags.Usage = creaturesRandomFactsUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -69,8 +74,8 @@ func ParseEndpoint(
 	{
 		svcn = flag.Arg(0)
 		switch svcn {
-		case "facts":
-			svcf = factsFlags
+		case "creatures":
+			svcf = creaturesFlags
 		default:
 			return nil, nil, fmt.Errorf("unknown service %q", svcn)
 		}
@@ -86,13 +91,16 @@ func ParseEndpoint(
 	{
 		epn = svcf.Arg(0)
 		switch svcn {
-		case "facts":
+		case "creatures":
 			switch epn {
 			case "list":
-				epf = factsListFlags
+				epf = creaturesListFlags
 
-			case "list-random":
-				epf = factsListRandomFlags
+			case "get":
+				epf = creaturesGetFlags
+
+			case "random-facts":
+				epf = creaturesRandomFactsFlags
 
 			}
 
@@ -116,15 +124,18 @@ func ParseEndpoint(
 	)
 	{
 		switch svcn {
-		case "facts":
-			c := factsc.NewClient(scheme, host, doer, enc, dec, restore)
+		case "creatures":
+			c := creaturesc.NewClient(scheme, host, doer, enc, dec, restore)
 			switch epn {
 			case "list":
 				endpoint = c.List()
 				data = nil
-			case "list-random":
-				endpoint = c.ListRandom()
-				data, err = factsc.BuildListRandomPayload(*factsListRandomNFlag)
+			case "get":
+				endpoint = c.Get()
+				data, err = creaturesc.BuildGetPayload(*creaturesGetNameFlag)
+			case "random-facts":
+				endpoint = c.RandomFacts()
+				data, err = creaturesc.BuildRandomFactsPayload(*creaturesRandomFactsNameFlag, *creaturesRandomFactsNFlag)
 			}
 		}
 	}
@@ -135,37 +146,51 @@ func ParseEndpoint(
 	return endpoint, data, nil
 }
 
-// factsUsage displays the usage of the facts command and its subcommands.
-func factsUsage() {
-	fmt.Fprintf(os.Stderr, `The facts service provides you with important facts about goats and other creatures.
+// creaturesUsage displays the usage of the creatures command and its
+// subcommands.
+func creaturesUsage() {
+	fmt.Fprintf(os.Stderr, `The creatures service provides you with farm creatures and facts about them.
 Usage:
-    %s [globalflags] facts COMMAND [flags]
+    %s [globalflags] creatures COMMAND [flags]
 
 COMMAND:
     list: List implements list.
-    list-random: ListRandom implements list-random.
+    get: Get implements get.
+    random-facts: RandomFacts implements random-facts.
 
 Additional help:
-    %s facts COMMAND --help
+    %s creatures COMMAND --help
 `, os.Args[0], os.Args[0])
 }
-func factsListUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] facts list
+func creaturesListUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] creatures list
 
 List implements list.
 
 Example:
-    `+os.Args[0]+` facts list
+    `+os.Args[0]+` creatures list
 `, os.Args[0])
 }
 
-func factsListRandomUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] facts list-random -n INT
+func creaturesGetUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] creatures get -name STRING
 
-ListRandom implements list-random.
+Get implements get.
+    -name STRING: Name of the creature
+
+Example:
+    `+os.Args[0]+` creatures get --name "goat"
+`, os.Args[0])
+}
+
+func creaturesRandomFactsUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] creatures random-facts -name STRING -n INT
+
+RandomFacts implements random-facts.
+    -name STRING: Name of the creature
     -n INT: 
 
 Example:
-    `+os.Args[0]+` facts list-random --n 10
+    `+os.Args[0]+` creatures random-facts --name "goat" --n 5
 `, os.Args[0])
 }

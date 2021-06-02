@@ -25,7 +25,8 @@ import (
 	"syscall"
 
 	goatopsfarm "github.com/martinohmann/goatops.farm"
-	"github.com/martinohmann/goatops.farm/gen/facts"
+	"github.com/martinohmann/goatops.farm/data"
+	"github.com/martinohmann/goatops.farm/gen/creatures"
 )
 
 func main() {
@@ -37,8 +38,8 @@ func main() {
 
 	logger := log.New(os.Stderr, "[goatopsfarm] ", log.Ltime)
 
-	factsSvc := goatopsfarm.NewFactsService(logger)
-	factsEndpoints := facts.NewEndpoints(factsSvc)
+	creatureSvc := goatopsfarm.NewCreatureService(logger, data.Creatures)
+	creaturesEndpoints := creatures.NewEndpoints(creatureSvc)
 
 	errc := make(chan error)
 
@@ -51,7 +52,7 @@ func main() {
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
 
-	startServer(ctx, *listenAddr, factsEndpoints, &wg, errc, logger, *redirectHTTPS, *debug)
+	startServer(ctx, *listenAddr, creaturesEndpoints, &wg, errc, logger, *redirectHTTPS, *debug)
 
 	logger.Printf("exiting (%v)", <-errc)
 

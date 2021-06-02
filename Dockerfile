@@ -9,9 +9,9 @@ RUN go mod download
 
 COPY gen/ gen/
 COPY cmd/ cmd/
+COPY data/ data/
 COPY static/ static/
-COPY facts.go .
-COPY goat_facts.go .
+COPY creatures.go .
 COPY static.go .
 
 RUN go generate
