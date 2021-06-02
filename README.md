@@ -5,14 +5,15 @@
 
 API for goat facts from [https://github.com/binford2k/goatops](https://github.com/binford2k/goatops).
 
+## Why?
+
+Because I can. And because I'm not a goat farmer yet.
+
 ## Running
 
-Generate goat facts, build and run.
-
 ```bash
-make generate
 make build
-./goatops.farm
+./goatopsfarm
 ```
 
 ## License
