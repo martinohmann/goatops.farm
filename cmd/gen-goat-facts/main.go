@@ -15,21 +15,17 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"go/format"
-	"html"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
+	"strings"
 
-	"github.com/microcosm-cc/bluemonday"
+	"github.com/antchfx/htmlquery"
 )
-
-var factRe = regexp.MustCompile(`^\s+<li>(.+)</?li>`)
 
 func main() {
 	resp, err := http.Get("https://raw.githubusercontent.com/binford2k/goatops/master/index.html")
@@ -39,9 +35,15 @@ func main() {
 
 	defer resp.Body.Close()
 
-	p := bluemonday.NewPolicy()
+	doc, err := htmlquery.Parse(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	r := bufio.NewScanner(resp.Body)
+	nodes, err := htmlquery.QueryAll(doc, "//div[@id='container']//li")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	var buf bytes.Buffer
 
@@ -51,16 +53,14 @@ func main() {
 	buf.WriteString("\n\npackage data\n\n")
 	buf.WriteString("var goatFacts = []string{\n")
 
-	for r.Scan() {
-		line := r.Text()
-
-		if factRe.MatchString(line) {
-			fact := factRe.ReplaceAllString(line, `$1`)
-			fact = html.UnescapeString(p.Sanitize(fact))
-
-			buf.WriteString(strconv.Quote(fact))
-			buf.WriteString(",\n")
+	for _, node := range nodes {
+		text := strings.TrimSpace(htmlquery.InnerText(node))
+		if text == "" {
+			continue
 		}
+
+		buf.WriteString(strconv.Quote(text))
+		buf.WriteString(",\n")
 	}
 
 	buf.WriteString("}\n")
