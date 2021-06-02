@@ -20,51 +20,39 @@ import (
 
 // handleHTTPServer starts configures and starts a HTTP server on the given
 // URL. It shuts down the server if any error is received in the error channel.
-func handleHTTPServer(ctx context.Context, u *url.URL, goatfactsEndpoints *facts.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
+func handleHTTPServer(ctx context.Context, u *url.URL, factsEndpoints *facts.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
 	// Setup goa log adapter.
-	var (
-		adapter middleware.Logger
-	)
-	{
-		adapter = middleware.NewLogger(logger)
-	}
+	adapter := middleware.NewLogger(logger)
 
 	// Provide the transport specific request decoder and response encoder.
 	// The goa http package has built-in support for JSON, XML and gob.
 	// Other encodings can be used by providing the corresponding functions,
 	// see goa.design/implement/encoding.
-	var (
-		dec = goahttp.RequestDecoder
-		enc = goahttp.ResponseEncoder
-	)
+	dec := goahttp.RequestDecoder
+	enc := goahttp.ResponseEncoder
 
 	// Build the service HTTP request multiplexer and configure it to serve
 	// HTTP requests to the service endpoints.
-	var mux goahttp.Muxer
-	{
-		mux = goahttp.NewMuxer()
-	}
+	mux := goahttp.NewMuxer()
 
 	// Wrap the endpoints with the transport specific layers. The generated
 	// server packages contains code generated from the design which maps
 	// the service input and output data structures to HTTP requests and
 	// responses.
-	var (
-		factsServer  *factssvr.Server
-		staticServer *staticsvr.Server
-	)
-	{
-		fs := http.FS(goatopsfarm.StaticFS)
-		eh := errorHandler(logger)
-		factsServer = factssvr.New(goatfactsEndpoints, mux, dec, enc, eh, nil)
-		staticServer = staticsvr.New(nil, mux, dec, enc, eh, nil, fs, fs, fs)
-		if debug {
-			servers := goahttp.Servers{
-				factsServer,
-			}
-			servers.Use(httpmdlwr.Debug(mux, os.Stdout))
+	fs := http.FS(goatopsfarm.StaticFS)
+	eh := errorHandler(logger)
+
+	factsServer := factssvr.New(factsEndpoints, mux, dec, enc, eh, nil)
+	staticServer := staticsvr.New(nil, mux, dec, enc, eh, nil, fs, fs, fs)
+
+	if debug {
+		servers := goahttp.Servers{
+			factsServer,
+			staticServer,
 		}
+		servers.Use(httpmdlwr.Debug(mux, os.Stdout))
 	}
+
 	// Configure the mux.
 	staticsvr.Mount(mux, staticServer)
 	factssvr.Mount(mux, factsServer)
@@ -72,17 +60,18 @@ func handleHTTPServer(ctx context.Context, u *url.URL, goatfactsEndpoints *facts
 	// Wrap the multiplexer with additional middlewares. Middlewares mounted
 	// here apply to all the service endpoints.
 	var handler http.Handler = mux
-	{
-		handler = httpmdlwr.Log(adapter)(handler)
-		handler = httpmdlwr.RequestID()(handler)
-	}
+
+	handler = httpmdlwr.Log(adapter)(handler)
+	handler = httpmdlwr.RequestID()(handler)
 
 	// Start HTTP server using default configuration, change the code to
 	// configure the server as required by your service.
 	srv := &http.Server{Addr: u.Host, Handler: handler}
+
 	for _, m := range staticServer.Mounts {
 		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
+
 	for _, m := range factsServer.Mounts {
 		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}

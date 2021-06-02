@@ -29,29 +29,14 @@ func main() {
 	flag.Parse()
 
 	// Setup logger. Replace logger with your own log package of choice.
-	var (
-		logger *log.Logger
-	)
-	{
-		logger = log.New(os.Stderr, "[goatopsfarm] ", log.Ltime)
-	}
+	logger := log.New(os.Stderr, "[goatopsfarm] ", log.Ltime)
 
 	// Initialize the services.
-	var (
-		factsSvc facts.Service
-	)
-	{
-		factsSvc = goatopsfarm.NewFactsService(logger)
-	}
+	factsSvc := goatopsfarm.NewFactsService(logger)
 
 	// Wrap the services in endpoints that can be invoked from other services
 	// potentially running in different processes.
-	var (
-		factsEndpoints *facts.Endpoints
-	)
-	{
-		factsEndpoints = facts.NewEndpoints(factsSvc)
-	}
+	factsEndpoints := facts.NewEndpoints(factsSvc)
 
 	// Create channel used by both the signal handler and server goroutines
 	// to notify the main goroutine when to stop the server.
