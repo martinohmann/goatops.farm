@@ -6,25 +6,26 @@ import (
 )
 
 var _ = API("goatopsfarm", func() {
-	Title("Goat facts Service")
-	Description("Service for obtaining your daily dose of goat facts")
+	Title("goatops.farm")
+	Description("Service for obtaining your daily dose of facts about goats and other creatures")
 	Server("goatopsfarm", func() {
-		Host("localhost", func() {
-			URI("http://localhost:8080")
-		})
 		Host("goatops.farm", func() {
 			Description("public host")
 			URI("https://goatops.farm")
 		})
+		Host("localhost", func() {
+			Description("development host")
+			URI("http://localhost:8080")
+		})
 	})
-})
-
-var _ = Service("goatfacts", func() {
-	Description("The goatfacts service provides you with important facts about goats.")
 
 	cors.Origin("*")
+})
 
-	Method("ListFacts", func() {
+var _ = Service("facts", func() {
+	Description("The facts service provides you with important facts about goats and other creatures.")
+
+	Method("list", func() {
 		Result(ArrayOf(String))
 
 		HTTP(func() {
@@ -33,7 +34,7 @@ var _ = Service("goatfacts", func() {
 		})
 	})
 
-	Method("RandomFacts", func() {
+	Method("list-random", func() {
 		Payload(func() {
 			Field(1, "n", Int, "Number of random facts")
 		})
@@ -51,18 +52,12 @@ var _ = Service("goatfacts", func() {
 			Response("BadRequest", StatusBadRequest)
 		})
 	})
+})
 
-	Method("Index", func() {
-		Result(Bytes)
+var _ = Service("static", func() {
+	Description("Static pages and site assets")
 
-		HTTP(func() {
-			GET("/")
-			Response(StatusOK, func() {
-				ContentType("text/html")
-			})
-		})
-	})
-
-	Files("/api/openapi.json", "./gen/http/openapi3.json")
-	Files("/api/swagger/{*path}", "./static/swagger")
+	Files("/", "./static/home.html")
+	Files("/openapi.json", "./gen/http/openapi3.json")
+	Files("/swagger-ui.html", "./static/swagger-ui.html")
 })

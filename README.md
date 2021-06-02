@@ -7,7 +7,7 @@ API for goat facts from [https://github.com/binford2k/goatops](https://github.co
 
 ## Running
 
-Generate `goatfacts.json`, build and run.
+Generate goat facts, build and run.
 
 ```bash
 make generate

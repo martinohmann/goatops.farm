@@ -9,8 +9,10 @@ import (
 	"sync"
 	"time"
 
-	goatfacts "github.com/martinohmann/goatops.farm/gen/goatfacts"
-	goatfactssvr "github.com/martinohmann/goatops.farm/gen/http/goatfacts/server"
+	goatopsfarm "github.com/martinohmann/goatops.farm"
+	"github.com/martinohmann/goatops.farm/gen/facts"
+	factssvr "github.com/martinohmann/goatops.farm/gen/http/facts/server"
+	staticsvr "github.com/martinohmann/goatops.farm/gen/http/static/server"
 	goahttp "goa.design/goa/v3/http"
 	httpmdlwr "goa.design/goa/v3/http/middleware"
 	"goa.design/goa/v3/middleware"
@@ -18,7 +20,7 @@ import (
 
 // handleHTTPServer starts configures and starts a HTTP server on the given
 // URL. It shuts down the server if any error is received in the error channel.
-func handleHTTPServer(ctx context.Context, u *url.URL, goatfactsEndpoints *goatfacts.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
+func handleHTTPServer(ctx context.Context, u *url.URL, goatfactsEndpoints *facts.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
 	// Setup goa log adapter.
 	var (
 		adapter middleware.Logger
@@ -48,20 +50,24 @@ func handleHTTPServer(ctx context.Context, u *url.URL, goatfactsEndpoints *goatf
 	// the service input and output data structures to HTTP requests and
 	// responses.
 	var (
-		goatfactsServer *goatfactssvr.Server
+		factsServer  *factssvr.Server
+		staticServer *staticsvr.Server
 	)
 	{
+		fs := http.FS(goatopsfarm.StaticFS)
 		eh := errorHandler(logger)
-		goatfactsServer = goatfactssvr.New(goatfactsEndpoints, mux, dec, enc, eh, nil, nil, nil)
+		factsServer = factssvr.New(goatfactsEndpoints, mux, dec, enc, eh, nil)
+		staticServer = staticsvr.New(nil, mux, dec, enc, eh, nil, fs, fs, fs)
 		if debug {
 			servers := goahttp.Servers{
-				goatfactsServer,
+				factsServer,
 			}
 			servers.Use(httpmdlwr.Debug(mux, os.Stdout))
 		}
 	}
 	// Configure the mux.
-	goatfactssvr.Mount(mux, goatfactsServer)
+	staticsvr.Mount(mux, staticServer)
+	factssvr.Mount(mux, factsServer)
 
 	// Wrap the multiplexer with additional middlewares. Middlewares mounted
 	// here apply to all the service endpoints.
@@ -74,7 +80,10 @@ func handleHTTPServer(ctx context.Context, u *url.URL, goatfactsEndpoints *goatf
 	// Start HTTP server using default configuration, change the code to
 	// configure the server as required by your service.
 	srv := &http.Server{Addr: u.Host, Handler: handler}
-	for _, m := range goatfactsServer.Mounts {
+	for _, m := range staticServer.Mounts {
+		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+	}
+	for _, m := range factsServer.Mounts {
 		logger.Printf("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
 

@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"os"
 
-	goatfactsc "github.com/martinohmann/goatops.farm/gen/http/goatfacts/client"
+	factsc "github.com/martinohmann/goatops.farm/gen/http/facts/client"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -23,13 +23,13 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `goatfacts (list-facts|random-facts|index)
+	return `facts (list|list-random)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` goatfacts list-facts` + "\n" +
+	return os.Args[0] + ` facts list` + "\n" +
 		""
 }
 
@@ -43,19 +43,16 @@ func ParseEndpoint(
 	restore bool,
 ) (goa.Endpoint, interface{}, error) {
 	var (
-		goatfactsFlags = flag.NewFlagSet("goatfacts", flag.ContinueOnError)
+		factsFlags = flag.NewFlagSet("facts", flag.ContinueOnError)
 
-		goatfactsListFactsFlags = flag.NewFlagSet("list-facts", flag.ExitOnError)
+		factsListFlags = flag.NewFlagSet("list", flag.ExitOnError)
 
-		goatfactsRandomFactsFlags = flag.NewFlagSet("random-facts", flag.ExitOnError)
-		goatfactsRandomFactsNFlag = goatfactsRandomFactsFlags.String("n", "", "")
-
-		goatfactsIndexFlags = flag.NewFlagSet("index", flag.ExitOnError)
+		factsListRandomFlags = flag.NewFlagSet("list-random", flag.ExitOnError)
+		factsListRandomNFlag = factsListRandomFlags.String("n", "", "")
 	)
-	goatfactsFlags.Usage = goatfactsUsage
-	goatfactsListFactsFlags.Usage = goatfactsListFactsUsage
-	goatfactsRandomFactsFlags.Usage = goatfactsRandomFactsUsage
-	goatfactsIndexFlags.Usage = goatfactsIndexUsage
+	factsFlags.Usage = factsUsage
+	factsListFlags.Usage = factsListUsage
+	factsListRandomFlags.Usage = factsListRandomUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -72,8 +69,8 @@ func ParseEndpoint(
 	{
 		svcn = flag.Arg(0)
 		switch svcn {
-		case "goatfacts":
-			svcf = goatfactsFlags
+		case "facts":
+			svcf = factsFlags
 		default:
 			return nil, nil, fmt.Errorf("unknown service %q", svcn)
 		}
@@ -89,16 +86,13 @@ func ParseEndpoint(
 	{
 		epn = svcf.Arg(0)
 		switch svcn {
-		case "goatfacts":
+		case "facts":
 			switch epn {
-			case "list-facts":
-				epf = goatfactsListFactsFlags
+			case "list":
+				epf = factsListFlags
 
-			case "random-facts":
-				epf = goatfactsRandomFactsFlags
-
-			case "index":
-				epf = goatfactsIndexFlags
+			case "list-random":
+				epf = factsListRandomFlags
 
 			}
 
@@ -122,18 +116,15 @@ func ParseEndpoint(
 	)
 	{
 		switch svcn {
-		case "goatfacts":
-			c := goatfactsc.NewClient(scheme, host, doer, enc, dec, restore)
+		case "facts":
+			c := factsc.NewClient(scheme, host, doer, enc, dec, restore)
 			switch epn {
-			case "list-facts":
-				endpoint = c.ListFacts()
+			case "list":
+				endpoint = c.List()
 				data = nil
-			case "random-facts":
-				endpoint = c.RandomFacts()
-				data, err = goatfactsc.BuildRandomFactsPayload(*goatfactsRandomFactsNFlag)
-			case "index":
-				endpoint = c.Index()
-				data = nil
+			case "list-random":
+				endpoint = c.ListRandom()
+				data, err = factsc.BuildListRandomPayload(*factsListRandomNFlag)
 			}
 		}
 	}
@@ -144,49 +135,37 @@ func ParseEndpoint(
 	return endpoint, data, nil
 }
 
-// goatfactsUsage displays the usage of the goatfacts command and its
-// subcommands.
-func goatfactsUsage() {
-	fmt.Fprintf(os.Stderr, `The goatfacts service provides you with important facts about goats.
+// factsUsage displays the usage of the facts command and its subcommands.
+func factsUsage() {
+	fmt.Fprintf(os.Stderr, `The facts service provides you with important facts about goats and other creatures.
 Usage:
-    %s [globalflags] goatfacts COMMAND [flags]
+    %s [globalflags] facts COMMAND [flags]
 
 COMMAND:
-    list-facts: ListFacts implements ListFacts.
-    random-facts: RandomFacts implements RandomFacts.
-    index: Index implements Index.
+    list: List implements list.
+    list-random: ListRandom implements list-random.
 
 Additional help:
-    %s goatfacts COMMAND --help
+    %s facts COMMAND --help
 `, os.Args[0], os.Args[0])
 }
-func goatfactsListFactsUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] goatfacts list-facts
+func factsListUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] facts list
 
-ListFacts implements ListFacts.
+List implements list.
 
 Example:
-    `+os.Args[0]+` goatfacts list-facts
+    `+os.Args[0]+` facts list
 `, os.Args[0])
 }
 
-func goatfactsRandomFactsUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] goatfacts random-facts -n INT
+func factsListRandomUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] facts list-random -n INT
 
-RandomFacts implements RandomFacts.
+ListRandom implements list-random.
     -n INT: 
 
 Example:
-    `+os.Args[0]+` goatfacts random-facts --n 2874550282530042957
-`, os.Args[0])
-}
-
-func goatfactsIndexUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] goatfacts index
-
-Index implements Index.
-
-Example:
-    `+os.Args[0]+` goatfacts index
+    `+os.Args[0]+` facts list-random --n 2874550282530042957
 `, os.Args[0])
 }

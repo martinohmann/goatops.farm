@@ -13,7 +13,7 @@ import (
 	"syscall"
 
 	goatopsfarm "github.com/martinohmann/goatops.farm"
-	goatfacts "github.com/martinohmann/goatops.farm/gen/goatfacts"
+	"github.com/martinohmann/goatops.farm/gen/facts"
 )
 
 func main() {
@@ -38,24 +38,19 @@ func main() {
 
 	// Initialize the services.
 	var (
-		goatFactsSvc goatfacts.Service
-		err          error
+		factsSvc facts.Service
 	)
 	{
-		goatFactsSvc, err = goatopsfarm.NewGoatFactsService(logger)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to initialize goat facts service: %v\n", err)
-			os.Exit(1)
-		}
+		factsSvc = goatopsfarm.NewFactsService(logger)
 	}
 
 	// Wrap the services in endpoints that can be invoked from other services
 	// potentially running in different processes.
 	var (
-		goatFactsEndpoints *goatfacts.Endpoints
+		factsEndpoints *facts.Endpoints
 	)
 	{
-		goatFactsEndpoints = goatfacts.NewEndpoints(goatFactsSvc)
+		factsEndpoints = facts.NewEndpoints(factsSvc)
 	}
 
 	// Create channel used by both the signal handler and server goroutines
@@ -99,7 +94,7 @@ func main() {
 			} else if u.Port() == "" {
 				u.Host = net.JoinHostPort(u.Host, ":80")
 			}
-			handleHTTPServer(ctx, u, goatFactsEndpoints, &wg, errc, logger, *dbgF)
+			handleHTTPServer(ctx, u, factsEndpoints, &wg, errc, logger, *dbgF)
 		}
 
 	case "goatops.farm":
@@ -126,7 +121,7 @@ func main() {
 			} else if u.Port() == "" {
 				u.Host = net.JoinHostPort(u.Host, ":443")
 			}
-			handleHTTPServer(ctx, u, goatFactsEndpoints, &wg, errc, logger, *dbgF)
+			handleHTTPServer(ctx, u, factsEndpoints, &wg, errc, logger, *dbgF)
 		}
 
 	default:

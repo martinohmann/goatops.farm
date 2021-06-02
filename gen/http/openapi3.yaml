@@ -1,114 +1,28 @@
 openapi: 3.0.3
 info:
-  title: Goat facts Service
-  description: Service for obtaining your daily dose of goat facts
+  title: goatops.farm
+  description: Service for obtaining your daily dose of facts about goats and other
+    creatures
   version: "1.0"
 servers:
-- url: http://localhost:8080
 - url: https://goatops.farm
+- url: http://localhost:8080
 paths:
   /:
     get:
       tags:
-      - goatfacts
-      summary: Index goatfacts
-      operationId: goatfacts#Index
-      responses:
-        "200":
-          description: OK response.
-          content:
-            text/html:
-              schema:
-                type: string
-                example:
-                - 65
-                - 117
-                - 116
-                - 32
-                - 101
-                - 105
-                - 117
-                - 115
-                - 32
-                - 100
-                - 111
-                - 108
-                - 111
-                - 114
-                - 101
-                - 115
-                - 32
-                - 112
-                - 101
-                - 114
-                - 115
-                - 112
-                - 105
-                - 99
-                - 105
-                - 97
-                - 116
-                - 105
-                - 115
-                - 32
-                - 97
-                - 98
-                - 46
-                format: binary
-              example:
-              - 69
-              - 116
-              - 32
-              - 97
-              - 117
-              - 116
-              - 32
-              - 110
-              - 101
-              - 99
-              - 101
-              - 115
-              - 115
-              - 105
-              - 116
-              - 97
-              - 116
-              - 105
-              - 98
-              - 117
-              - 115
-              - 46
-  /api/openapi.json:
-    get:
-      tags:
-      - goatfacts
-      summary: Download ./gen/http/openapi3.json
-      operationId: goatfacts#/api/openapi.json
+      - static
+      summary: Download ./static/home.html
+      operationId: static#/
       responses:
         "200":
           description: File downloaded
-  /api/swagger/{*path}:
-    get:
-      tags:
-      - goatfacts
-      summary: Download ./static/swagger
-      operationId: goatfacts#/api/swagger/{*path}
-      parameters:
-      - name: path
-        in: path
-        description: Relative file path
-        required: true
-      responses:
-        "200":
-          description: File not found
-        "404":
-          description: File not found
   /api/v1/facts:
     get:
       tags:
-      - goatfacts
-      summary: ListFacts goatfacts
-      operationId: goatfacts#ListFacts
+      - facts
+      summary: list facts
+      operationId: facts#list
       responses:
         "200":
           description: OK response.
@@ -118,20 +32,19 @@ paths:
                 type: array
                 items:
                   type: string
-                  example: Recusandae vel dolorum.
+                  example: Quos dolor.
                 example:
-                - Saepe ipsum quae est.
-                - Velit quasi quaerat perspiciatis.
-                - Ad repellat.
+                - Quibusdam perspiciatis dignissimos.
+                - Qui unde non impedit quos.
               example:
-              - Dolor dolore esse temporibus error rerum.
-              - Blanditiis ex alias.
+              - Consequatur culpa veniam tenetur.
+              - Beatae fugiat.
   /api/v1/facts/random:
     get:
       tags:
-      - goatfacts
-      summary: RandomFacts goatfacts
-      operationId: goatfacts#RandomFacts
+      - facts
+      summary: list-random facts
+      operationId: facts#list-random
       parameters:
       - name: "n"
         in: query
@@ -140,9 +53,9 @@ paths:
         schema:
           type: integer
           description: Number of random facts
-          example: 8103290738173953045
+          example: 2032390880600127203
           format: int64
-        example: 8035204789576502952
+        example: 2044007140922159932
       responses:
         "200":
           description: OK response.
@@ -152,15 +65,13 @@ paths:
                 type: array
                 items:
                   type: string
-                  example: Culpa veniam.
+                  example: Ea eaque beatae recusandae.
                 example:
-                - Beatae fugiat.
-                - Explicabo nihil.
+                - Modi sint saepe.
+                - Quae est ullam velit quasi.
               example:
-              - Molestias voluptate id.
-              - Inventore ea.
-              - Rerum aut esse quia mollitia.
-              - Fugiat temporibus vero expedita.
+              - Voluptas est alias aut eius.
+              - Perspiciatis ab.
         "400":
           description: Bad Request response.
           content:
@@ -171,6 +82,24 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
+  /openapi.json:
+    get:
+      tags:
+      - static
+      summary: Download ./gen/http/openapi3.json
+      operationId: static#/openapi.json
+      responses:
+        "200":
+          description: File downloaded
+  /swagger-ui.html:
+    get:
+      tags:
+      - static
+      summary: Download ./static/swagger-ui.html
+      operationId: static#/swagger-ui.html
+      responses:
+        "200":
+          description: File downloaded
 components:
   schemas:
     Error:
@@ -197,7 +126,7 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: false
+          example: true
         timeout:
           type: boolean
           description: Is the error a timeout?
@@ -214,5 +143,8 @@ components:
       - timeout
       - fault
 tags:
-- name: goatfacts
-  description: The goatfacts service provides you with important facts about goats.
+- name: static
+  description: Static pages and site assets
+- name: facts
+  description: The facts service provides you with important facts about goats and
+    other creatures.

@@ -49,7 +49,7 @@ func main() {
 	buf.WriteString(filepath.Base(os.Args[0]))
 	buf.WriteString(`"; DO NOT EDIT.`)
 	buf.WriteString("\n\npackage goatopsfarm\n\n")
-	buf.WriteString("var facts = []string{\n")
+	buf.WriteString("var goatFacts = []string{\n")
 
 	for r.Scan() {
 		line := r.Text()
