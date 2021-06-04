@@ -24,5 +24,6 @@ func init() {
 	Creatures = []*creatures.Creature{
 		{Name: "goat", Facts: goatFacts},
 		{Name: "sloth", Facts: slothFacts},
+		{Name: "cat", Facts: catFacts},
 	}
 }
