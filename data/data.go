@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate sh -c "go run ../cmd/gen-goat-facts > goat.go"
+
 package data
 
 import "github.com/martinohmann/goatops.farm/gen/creatures"
