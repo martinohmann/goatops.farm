@@ -103,8 +103,8 @@ func (c *Client) BuildGetRequest(ctx context.Context, v interface{}) (*http.Requ
 // get endpoint. restoreBody controls whether the response body should be
 // restored after having been read.
 // DecodeGetResponse may return the following errors:
-//	- "not_found" (type *goa.ServiceError): http.StatusNotFound
-//	- error: internal error
+//   - "not_found" (type *goa.ServiceError): http.StatusNotFound
+//   - error: internal error
 func DecodeGetResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -202,9 +202,9 @@ func EncodeRandomFactsRequest(encoder func(*http.Request) goahttp.Encoder) func(
 // creatures random-facts endpoint. restoreBody controls whether the response
 // body should be restored after having been read.
 // DecodeRandomFactsResponse may return the following errors:
-//	- "bad_request" (type *goa.ServiceError): http.StatusBadRequest
-//	- "not_found" (type *goa.ServiceError): http.StatusNotFound
-//	- error: internal error
+//   - "bad_request" (type *goa.ServiceError): http.StatusBadRequest
+//   - "not_found" (type *goa.ServiceError): http.StatusNotFound
+//   - error: internal error
 func DecodeRandomFactsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
